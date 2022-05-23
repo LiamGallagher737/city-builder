@@ -14,7 +14,3 @@ impl RoadNetwork {
 pub fn road_network_startup_system(mut commands: Commands) {
     commands.insert_resource(RoadNetwork::new());
 }
-
-pub fn road_network_system(network: Res<RoadNetwork>){
-    println!("{}", network.num);
-}
