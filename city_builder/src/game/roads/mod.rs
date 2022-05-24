@@ -1,6 +1,7 @@
 use bevy::prelude::*;
 
 mod road_network;
+mod components;
 
 pub struct RoadsPlugin;
 impl Plugin for RoadsPlugin {

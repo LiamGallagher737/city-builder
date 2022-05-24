@@ -1,16 +1,6 @@
 use bevy::prelude::*;
 
-pub struct RoadNetwork {
-    // roads: HashMap< >
-}
-
-impl RoadNetwork {
-    fn new() -> Self {
-        Self {
-
-        }
-    }
-}
+use super::components::*;
 
 pub fn road_network_startup_system(
     mut commands: Commands,

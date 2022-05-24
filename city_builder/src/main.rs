@@ -14,7 +14,7 @@ fn main() {
         .add_plugins(game::GamePlugins)
         .add_plugin(LogDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
-        .add_startup_system(scene_setup)
+        .add_startup_system(scene_setup) 
         .run();
 }
 
