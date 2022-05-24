@@ -1,6 +1,6 @@
 use bevy::prelude::*;
 
-use super::components::*;
+use super::components::RoadNetwork;
 
 pub fn road_network_startup_system(
     mut commands: Commands,
