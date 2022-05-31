@@ -1,15 +1,14 @@
 use std::sync::{RwLock, Arc};
-
 use bevy::{utils::hashbrown::HashSet, prelude::Vec3};
 
 pub struct RoadNetwork {
-    pub roads: Arc<RwLock<HashSet<Road>>>,
+    pub roads: HashSet<Road>,
 }
 
 impl RoadNetwork {
     pub fn new() -> Self {
         Self {
-            roads: Arc::new(RwLock::new(HashSet::new())),
+            roads: HashSet::<Road>::new(),
         }
     }
 }
@@ -23,9 +22,9 @@ pub struct Road {
 impl Road {
     pub fn new() -> Self {
         Self { 
-            nodes: Vec::new(), 
-            intersection_start: Option::None, 
-            intersection_end: Option::None,
+            nodes: Vec::<Node>::new(), 
+            intersection_start: None, 
+            intersection_end: None,
         }
     }
 }
@@ -45,7 +44,7 @@ impl Intersection {
     pub fn new() -> Self {
         Self {
             position: Vec3::default(),
-            roads: HashSet::new(),
+            roads: HashSet::<(Arc<RwLock<Road>>, RoadCap)>::new(),
         }
     }
 }
@@ -53,4 +52,9 @@ impl Intersection {
 pub enum RoadCap {
     Start,
     End,
+}
+
+#[derive(Component)]
+pub struct RoadCreator {
+
 }
