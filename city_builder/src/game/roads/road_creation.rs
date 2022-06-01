@@ -4,7 +4,7 @@ use super::components::*;
 
 pub fn road_creation_system(
     mut road_network: ResMut<RoadNetwork>,
-    query: Query<RoadCreator>
+    mut query: Query<(&mut RoadCreator, &Transform)>
 ) {
-
+    
 }

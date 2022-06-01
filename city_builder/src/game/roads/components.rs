@@ -1,5 +1,5 @@
 use std::sync::{RwLock, Arc};
-use bevy::{utils::hashbrown::HashSet, prelude::Vec3};
+use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Component}};
 
 pub struct RoadNetwork {
     pub roads: HashSet<Road>,
