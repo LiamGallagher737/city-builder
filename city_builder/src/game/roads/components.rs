@@ -2,13 +2,13 @@ use std::sync::{RwLock, Arc};
 use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Component}};
 
 pub struct RoadNetwork {
-    pub roads: HashSet<Road>,
+    pub roads: HashSet<Arc<RwLock<Road>>>,
 }
 
 impl RoadNetwork {
     pub fn new() -> Self {
         Self {
-            roads: HashSet::<Road>::new(),
+            roads: HashSet::<Arc<RwLock<Road>>>::new(),
         }
     }
 }
@@ -56,5 +56,13 @@ pub enum RoadCap {
 
 #[derive(Component)]
 pub struct RoadCreator {
+    pub current_road: Option<Arc<RwLock<Road>>>,
+}
 
+impl Default for RoadCreator {
+    fn default() -> Self {
+        Self {
+            current_road: None
+        }
+    }
 }

@@ -16,5 +16,5 @@ pub fn road_network_startup_system(
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..Default::default()
     })
-    .insert(RoadCreator{});
+    .insert(RoadCreator::default());
 }
