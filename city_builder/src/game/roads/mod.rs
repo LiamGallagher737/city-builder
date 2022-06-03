@@ -4,6 +4,7 @@ use self::road_creation::road_creation_system;
 
 mod road_network;
 mod road_creation;
+mod road_mesh;
 mod components;
 
 pub struct RoadsPlugin;

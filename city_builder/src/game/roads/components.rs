@@ -1,5 +1,5 @@
 use std::{sync::{RwLock, Arc}, f32::consts::PI};
-use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component}};
+use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
 
 pub struct RoadNetwork {
     pub roads: HashSet<Arc<RwLock<Road>>>,
@@ -13,23 +13,15 @@ impl RoadNetwork {
     }
 }
 
+#[derive(PartialEq, Eq, Hash)]
 pub struct Road {
     pub nodes: Vec<Node>,
     pub intersection_start: Option<Arc<RwLock<Intersection>>>,
     pub intersection_end: Option<Arc<RwLock<Intersection>>>,
+    pub entity: Entity,
 }
 
-impl Road {
-    pub fn new() -> Self {
-        Self { 
-            nodes: Vec::<Node>::new(), 
-            intersection_start: None, 
-            intersection_end: None,
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Node {
     pub position: Vec3,
     pub control_a: Vec3,
@@ -56,14 +48,16 @@ impl Node {
     }
 }
 
+#[derive(PartialEq, Eq, Hash)]
 pub struct Intersection {
     pub position: Vec3,
     pub roads: HashSet<(Arc<RwLock<Road>>, RoadCap)>
 }
 
+#[derive(PartialEq, Eq, Hash)]
 pub enum RoadCap {
-    Start,
-    End,
+    _Start,
+    _End,
 }
 
 #[derive(Component)]
