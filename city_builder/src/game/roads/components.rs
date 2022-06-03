@@ -13,7 +13,6 @@ impl RoadNetwork {
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
 pub struct Road {
     pub nodes: Vec<Node>,
     pub intersection_start: Option<Arc<RwLock<Intersection>>>,
@@ -21,7 +20,7 @@ pub struct Road {
     pub entity: Entity,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone)]
 pub struct Node {
     pub position: Vec3,
     pub control_a: Vec3,
@@ -48,7 +47,6 @@ impl Node {
     }
 }
 
-#[derive(PartialEq, Eq, Hash)]
 pub struct Intersection {
     pub position: Vec3,
     pub roads: HashSet<(Arc<RwLock<Road>>, RoadCap)>
