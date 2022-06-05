@@ -11,7 +11,7 @@ pub fn generate_road_mesh (
     let mut triangles: Vec::<u16> = Vec::new();
     let mut uvs: Vec::<[f32; 2]> = Vec::new();
 
-    let mut vertIndex = 0;
+    let mut vert_index = 0;
 
     for i in 0..points.len() {
 
@@ -39,19 +39,20 @@ pub fn generate_road_mesh (
 
         // Triangles
         if i < points.len() - 1 {
-            triangles.push(vertIndex + 0);
-            triangles.push(vertIndex + 2);
-            triangles.push(vertIndex + 1);
+            triangles.push(vert_index + 0);
+            triangles.push(vert_index + 2);
+            triangles.push(vert_index + 1);
 
-            triangles.push(vertIndex + 1);
-            triangles.push(vertIndex + 2);
-            triangles.push(vertIndex + 3);
+            triangles.push(vert_index + 1);
+            triangles.push(vert_index + 2);
+            triangles.push(vert_index + 3);
         }
 
-        vertIndex += 2;
+        vert_index += 2;
     }
 
     let mut mesh = Mesh::new(bevy::render::mesh::PrimitiveTopology::TriangleList);
+    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
     mesh.set_indices(Some(Indices::U16(triangles)));

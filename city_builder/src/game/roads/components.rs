@@ -1,23 +1,33 @@
-use std::{sync::{RwLock, Arc}, f32::consts::PI};
+use std::f32::consts::PI;
 use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
 
 pub struct RoadNetwork {
-    pub roads: HashSet<Arc<RwLock<Road>>>,
+    pub roads: Vec<Road>,
+    pub intersections: Vec<Intersection>,
 }
 
 impl RoadNetwork {
     pub fn new() -> Self {
         Self {
-            roads: HashSet::<Arc<RwLock<Road>>>::new(),
+            roads: Vec::new(),
+            intersections: Vec::new(),
         }
     }
 }
 
 pub struct Road {
     pub nodes: Vec<Node>,
-    pub intersection_start: Option<Arc<RwLock<Intersection>>>,
-    pub intersection_end: Option<Arc<RwLock<Intersection>>>,
+    pub intersection_start: u16,
+    pub intersection_end: u16,
+    pub segment_count: u8,
     pub entity: Entity,
+}
+
+impl Road {
+    pub fn CalculateSegmentCount(points: &Vec<Node>) -> u8 {
+        const resultion: u8 = 20;
+        5
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -49,7 +59,7 @@ impl Node {
 
 pub struct Intersection {
     pub position: Vec3,
-    pub roads: HashSet<(Arc<RwLock<Road>>, RoadCap)>
+    pub roads: HashSet<(u16, RoadCap)>
 }
 
 #[derive(PartialEq, Eq, Hash)]
@@ -60,13 +70,15 @@ pub enum RoadCap {
 
 #[derive(Component)]
 pub struct RoadCreator {
+    pub active: bool,
     pub current_road_nodes: Option<Vec<Node>>,
-    pub start_intersection: Option<Arc<RwLock<Intersection>>>,
+    pub start_intersection: Option<u16>,
 }
 
 impl Default for RoadCreator {
     fn default() -> Self {
         Self {
+            active: true,
             current_road_nodes: None,
             start_intersection: None,
         }
