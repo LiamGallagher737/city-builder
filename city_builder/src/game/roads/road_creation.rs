@@ -35,26 +35,23 @@ pub fn road_creation_system(
         }
 
         if road_creator.current_road_nodes.is_none() {
+            road_creator.current_road_nodes = Some(vec![Node::new(tf.translation, tf.rotation)]);
+        }
 
+        if road_creator.start_intersection.is_none() {
             road_network.intersections.push(Intersection {
                 position: tf.translation,
                 roads: HashSet::new(),
             });
-
             road_creator.start_intersection = Some((road_network.intersections.len() - 1) as u16);
-
-            road_creator.current_road_nodes = Some(vec![Node::new(tf.translation, tf.rotation)]);
-
-            return;
         }
 
-        if road_creator.current_road_nodes.as_ref().unwrap().last().unwrap().position.distance_squared(tf.translation) >= NEW_NODE_DISTANCE_SQ {
-            road_creator.current_road_nodes.as_mut().unwrap().push(Node::new(tf.translation, tf.rotation));
-
-            // println!("\n\n\n{:#?}\n\n\n", road_creator.current_road_nodes);
+        if let Some(last_node) = road_creator.last_node() {
+            if last_node.position.distance_squared(tf.translation) >= NEW_NODE_DISTANCE_SQ {
+                road_creator.current_road_nodes.as_mut().unwrap().push(Node::new(tf.translation, tf.rotation));
+            }
         }
 
-        // TODO: check for intersection
         if !keys.just_pressed(bevy::prelude::KeyCode::Space) {
             return;
         }
@@ -64,18 +61,23 @@ pub fn road_creation_system(
             roads: HashSet::new(),
         });
 
-        let road = Road {
+        let mut road = Road {
             nodes: road_creator.current_road_nodes.clone().unwrap(),
+            length: f32::NAN,
             intersection_start: road_creator.start_intersection.unwrap(),
             intersection_end: (road_network.intersections.len() - 1) as u16,
-            segment_count: Road::CalculateSegmentCount(&road_creator.current_road_nodes.as_ref().unwrap()),
-            entity: commands.spawn_bundle(PbrBundle {
+            mesh_entity: commands.spawn_bundle(PbrBundle {
                 mesh: meshes.add(road_mesh::generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
                 material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
                 ..Default::default()
             }).id()
         };
+        road.calculate_distances_and_length(); 
+
         road_network.roads.push(road);
+
+        road_creator.current_road_nodes = None;
+        road_creator.start_intersection = Some((road_network.intersections.len() - 1) as u16);
 
     }
 }

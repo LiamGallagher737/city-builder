@@ -1,8 +1,9 @@
 use bevy::prelude::*;
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
+// use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::window::PresentMode;
 
 mod game;
+mod lib;
 
 fn main() {
     App::new()

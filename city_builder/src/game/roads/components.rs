@@ -1,6 +1,8 @@
 use std::f32::consts::PI;
 use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
 
+use crate::lib::bezier::evaluate_cubic_3d;
+
 pub struct RoadNetwork {
     pub roads: Vec<Road>,
     pub intersections: Vec<Intersection>,
@@ -15,18 +17,38 @@ impl RoadNetwork {
     }
 }
 
+#[derive(Debug)]
 pub struct Road {
     pub nodes: Vec<Node>,
+    pub length: f32,
     pub intersection_start: u16,
     pub intersection_end: u16,
-    pub segment_count: u8,
-    pub entity: Entity,
+    pub mesh_entity: Entity,
 }
 
 impl Road {
-    pub fn CalculateSegmentCount(points: &Vec<Node>) -> u8 {
-        const resultion: u8 = 20;
-        5
+    pub fn calculate_distances_and_length(self: &mut Self) {
+        const RESULTION: u8 = 20;
+        let mut total_length = 0.0;
+
+        for n in 0..self.nodes.len() - 1 {
+            let node = &self.nodes[n];
+            let next_node = &self.nodes[n + 1];
+
+            let mut length = 0.0;
+            let mut previous_point = node.position;
+            for i in 1..=RESULTION {
+                let t = 1.0 / RESULTION as f32 * i as f32;
+                let point = evaluate_cubic_3d(node.position, node.control_b, next_node.control_a, next_node.position, t);
+                length += previous_point.distance(point);
+                previous_point = point;
+            }
+
+            self.nodes[n].next_node_distance = length;
+            total_length += length;
+        }
+
+        self.length = total_length;
     }
 }
 
@@ -35,6 +57,7 @@ pub struct Node {
     pub position: Vec3,
     pub control_a: Vec3,
     pub control_b: Vec3,
+    pub next_node_distance: f32,
 }
 
 impl Node {
@@ -53,6 +76,7 @@ impl Node {
             position: position,
             control_a: position + forward * 1.0,
             control_b: position - forward * 1.0,
+            next_node_distance: f32::NAN,
         }
     }
 }
@@ -82,5 +106,16 @@ impl Default for RoadCreator {
             current_road_nodes: None,
             start_intersection: None,
         }
+    }
+}
+
+impl RoadCreator {
+    pub fn last_node(self: &Self) -> Option<Node>{
+        if let Some(nodes) = self.current_road_nodes.as_ref() {
+            if let Some(last_node) = nodes.last() {
+                return Some(last_node.clone());
+            }
+        }
+        None
     }
 }
