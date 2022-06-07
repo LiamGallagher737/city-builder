@@ -1,7 +1,6 @@
-use std::f32::consts::PI;
-use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
+use std::ops::Index;
 
-use crate::lib::bezier::evaluate_cubic_3d;
+use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Component, Entity}};
 
 pub struct RoadNetwork {
     pub roads: Vec<Road>,
@@ -20,66 +19,36 @@ impl RoadNetwork {
 #[derive(Debug)]
 pub struct Road {
     pub nodes: Vec<Node>,
-    pub length: f32,
     pub intersection_start: u16,
     pub intersection_end: u16,
     pub mesh_entity: Entity,
 }
 
 impl Road {
-    pub fn calculate_distances_and_length(self: &mut Self) {
-        const RESULTION: u8 = 20;
-        let mut total_length = 0.0;
+    pub fn calculate_point_at_distance(self: &Self, distance: f32) -> Option<Vec3> {
+        let node_index = distance.floor() as usize;
 
-        for n in 0..self.nodes.len() - 1 {
-            let node = &self.nodes[n];
-            let next_node = &self.nodes[n + 1];
-
-            let mut length = 0.0;
-            let mut previous_point = node.position;
-            for i in 1..=RESULTION {
-                let t = 1.0 / RESULTION as f32 * i as f32;
-                let point = evaluate_cubic_3d(node.position, node.control_b, next_node.control_a, next_node.position, t);
-                length += previous_point.distance(point);
-                previous_point = point;
-            }
-
-            self.nodes[n].next_node_distance = length;
-            total_length += length;
+        if self.nodes.len() <= node_index + 1 {
+            return None;
         }
 
-        self.length = total_length;
-    }
-    pub fn get_point_at_distance(self: &Self, distance: f32) -> Vec3 {
-        
+        let t = distance - node_index as f32;
+
+        let node_position = self.nodes[node_index].position;
+        Some(node_position + (self.nodes[node_index + 1].position - node_position) * t)
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Node {
     pub position: Vec3,
-    pub control_a: Vec3,
-    pub control_b: Vec3,
-    pub next_node_distance: f32,
 }
 
 impl Node {
     // Creates a new node as chosen position and generates 2 control nodes based on rotation
-    pub fn new(position: Vec3, rotation: Quat) -> Self {
-        let sinp = 2.0 * (rotation.w * rotation.y - rotation.z * rotation.x);
-        let euler_y: f32;
-        if sinp.abs() >= 1.0 {
-            euler_y = PI / 2.0 * sinp.sin();
-        } else {
-            euler_y = sinp.asin();
-        }
-        let forward = Vec3::new(euler_y.cos(), 0.0, euler_y.sin());
-        
+    pub fn new(position: Vec3) -> Self {      
         Self {
             position: position,
-            control_a: position + forward * 0.2,
-            control_b: position - forward * 0.2,
-            next_node_distance: f32::NAN,
         }
     }
 }
@@ -105,7 +74,7 @@ pub struct RoadCreator {
 impl Default for RoadCreator {
     fn default() -> Self {
         Self {
-            active: true,
+            active: true, // Set this to false later
             current_road_nodes: None,
             start_intersection: None,
         }
