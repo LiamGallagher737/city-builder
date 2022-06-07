@@ -1,6 +1,4 @@
-use std::ops::Index;
-
-use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Component, Entity}};
+use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
 
 pub struct RoadNetwork {
     pub roads: Vec<Road>,
@@ -25,17 +23,29 @@ pub struct Road {
 }
 
 impl Road {
-    pub fn calculate_point_at_distance(self: &Self, distance: f32) -> Option<Vec3> {
+    pub fn calculate_point_at_distance(self: &Self, distance: f32) -> Option<(Vec3, Quat)> {
         let node_index = distance.floor() as usize;
 
         if self.nodes.len() <= node_index + 1 {
             return None;
         }
 
-        let t = distance - node_index as f32;
-
         let node_position = self.nodes[node_index].position;
-        Some(node_position + (self.nodes[node_index + 1].position - node_position) * t)
+        let other_node_position = self.nodes[node_index + 1].position;
+
+        let t = distance - node_index as f32;
+        let position = node_position + (other_node_position - node_position) * t;
+
+        // Stolen from Transform::look_at method
+        let forward = node_position - other_node_position;
+        let right = Vec3::Y.cross(forward).normalize();
+        let up = forward.cross(right);
+        let rotation = Quat::from_mat3(&bevy::math::Mat3::from_cols(right, up, forward));
+
+        Some((
+            position,
+            rotation,
+        ))
     }
 }
 

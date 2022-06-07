@@ -2,6 +2,7 @@ use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Comman
 use super::{components::*, road_mesh};
 
 const NEW_NODE_DISTANCE_SQ: f32 = 1.0 * 1.0;
+const NEW_INTERSECTION_DISTANCE_SQ: f32 = 4.0 * 4.0;
 static mut DISTANCE_TRAVELED: f32 = 0.0;
 
 pub fn road_creation_system(
@@ -15,47 +16,51 @@ pub fn road_creation_system(
 ) {
     if let Ok((mut road_creator, mut tf)) = query.get_single_mut() {
 
-        if let Some(road) = road_network.roads.last() {
-            unsafe {
-                if let Some(position) = road.calculate_point_at_distance(DISTANCE_TRAVELED) {
-                    tf.translation = position;
+        {
+            if let Some(road) = road_network.roads.last() {
+                unsafe {
+                    if let Some((position, rotation)) = road.calculate_point_at_distance(DISTANCE_TRAVELED) {
+                        tf.translation = position;
+                        tf.rotation = rotation;
+                    } else {
+                        DISTANCE_TRAVELED = 0.0;
+                    }
+                    DISTANCE_TRAVELED += 0.05;
                 }
-                DISTANCE_TRAVELED += 0.05;
+            }
+
+            let mut velocity = Vec3::default();
+
+            if keys.pressed(bevy::prelude::KeyCode::W) {
+                velocity += tf.forward() * 0.05;
+            }
+
+            if keys.pressed(bevy::prelude::KeyCode::S) {
+                velocity -= tf.forward() * 0.05;
+            }
+
+            if keys.pressed(bevy::prelude::KeyCode::A) {
+                velocity -= tf.right() * 0.05;
+            }
+
+            if keys.pressed(bevy::prelude::KeyCode::D) {
+                velocity += tf.right() * 0.05;
+            }
+
+            if keys.pressed(bevy::prelude::KeyCode::Left) {
+                tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, 0.01, 0.0));
+            }
+
+            if keys.pressed(bevy::prelude::KeyCode::Right) {
+                tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, -0.01, 0.0));
+            }
+
+            tf.translation += velocity;
+
+            if let Ok(mut cam_tf) = cam_query.get_single_mut() {
+                cam_tf.look_at(tf.translation, Vec3::Y);
             }
         }
-
-        let mut velocity = Vec3::default();
-
-        if keys.pressed(bevy::prelude::KeyCode::W) {
-            velocity += tf.forward() * 0.05;
-        }
-
-        if keys.pressed(bevy::prelude::KeyCode::S) {
-            velocity -= tf.forward() * 0.05;
-        }
-
-        if keys.pressed(bevy::prelude::KeyCode::A) {
-            velocity -= tf.right() * 0.05;
-        }
-
-        if keys.pressed(bevy::prelude::KeyCode::D) {
-            velocity += tf.right() * 0.05;
-        }
-
-        if keys.pressed(bevy::prelude::KeyCode::Left) {
-            tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, 0.01, 0.0));
-        }
-
-        if keys.pressed(bevy::prelude::KeyCode::Right) {
-            tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, -0.01, 0.0));
-        }
-
-        tf.translation += velocity;
-
-        if let Ok(mut cam_tf) = cam_query.get_single_mut() {
-            cam_tf.look_at(tf.translation, Vec3::Y);
-        }
-
         // Start of actual code
 
         if road_creator.current_road_nodes.is_none() {
@@ -74,6 +79,30 @@ pub fn road_creation_system(
             if last_node.position.distance_squared(tf.translation) >= NEW_NODE_DISTANCE_SQ {
                 road_creator.current_road_nodes.as_mut().unwrap().push(Node::new(tf.translation));
             }
+        }
+
+        for road in &road_network.roads {
+            let mut lowest: Option<(f32, &Node)> = None;
+            for node in &road.nodes {
+
+                let distance = node.position.distance_squared(tf.translation);
+
+                if let Some((lowest_distance, _)) = lowest {
+                    if lowest_distance < distance {
+                        break;
+                    }
+                }
+
+                if distance <= NEW_INTERSECTION_DISTANCE_SQ {
+                    lowest = Some((distance, node));
+                }
+            }
+
+            if lowest.is_none() {
+                continue;
+            }
+
+            
         }
 
         if !keys.just_pressed(bevy::prelude::KeyCode::Space) {
