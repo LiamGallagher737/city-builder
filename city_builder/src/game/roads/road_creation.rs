@@ -17,17 +17,17 @@ pub fn road_creation_system(
     if let Ok((mut road_creator, mut tf)) = query.get_single_mut() {
 
         {
-            if let Some(road) = road_network.roads.last() {
-                unsafe {
-                    if let Some((position, rotation)) = road.calculate_point_at_distance(DISTANCE_TRAVELED) {
-                        tf.translation = position;
-                        tf.rotation = rotation;
-                    } else {
-                        DISTANCE_TRAVELED = 0.0;
-                    }
-                    DISTANCE_TRAVELED += 0.05;
-                }
-            }
+            // if let Some(road) = road_network.roads.last() {
+            //     unsafe {
+            //         if let Some((position, rotation)) = road.calculate_point_at_distance(DISTANCE_TRAVELED) {
+            //             tf.translation = position;
+            //             tf.rotation = rotation;
+            //         } else {
+            //             DISTANCE_TRAVELED = 0.0;
+            //         }
+            //         DISTANCE_TRAVELED += 0.05;
+            //     }
+            // }
 
             let mut velocity = Vec3::default();
 
@@ -72,7 +72,7 @@ pub fn road_creation_system(
                 position: tf.translation,
                 roads: HashSet::new(),
             });
-            road_creator.start_intersection = Some((road_network.intersections.len() - 1) as u16);
+            road_creator.start_intersection = Some(road_network.intersections.len() - 1);
         }
 
         if let Some(last_node) = road_creator.last_node() {
@@ -83,9 +83,15 @@ pub fn road_creation_system(
 
         for road in &road_network.roads {
             let mut lowest: Option<(f32, &Node)> = None;
-            for node in &road.nodes {
-
+            
+            let mut n = 0_usize;
+            while n < road.nodes.len() {
+                let node = &road.nodes[n];
                 let distance = node.position.distance_squared(tf.translation);
+
+                if distance > 10.0 * 10.0 {
+                    n += distance.floor() as usize - 10_usize;
+                }
 
                 if let Some((lowest_distance, _)) = lowest {
                     if lowest_distance < distance {
@@ -96,13 +102,15 @@ pub fn road_creation_system(
                 if distance <= NEW_INTERSECTION_DISTANCE_SQ {
                     lowest = Some((distance, node));
                 }
+
+                n += 1;
             }
 
             if lowest.is_none() {
                 continue;
             }
 
-            
+            println!("{:#?}", lowest);
         }
 
         if !keys.just_pressed(bevy::prelude::KeyCode::Space) {
@@ -117,7 +125,7 @@ pub fn road_creation_system(
         let road = Road {
             nodes: road_creator.current_road_nodes.clone().unwrap(),
             intersection_start: road_creator.start_intersection.unwrap(),
-            intersection_end: (road_network.intersections.len() - 1) as u16,
+            intersection_end: road_network.intersections.len() - 1,
             mesh_entity: commands.spawn_bundle(PbrBundle {
                 mesh: meshes.add(road_mesh::generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
                 material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
@@ -128,7 +136,7 @@ pub fn road_creation_system(
         road_network.roads.push(road);
 
         road_creator.current_road_nodes = None;
-        road_creator.start_intersection = Some((road_network.intersections.len() - 1) as u16);
+        road_creator.start_intersection = Some(road_network.intersections.len() - 1);
 
     }
 }

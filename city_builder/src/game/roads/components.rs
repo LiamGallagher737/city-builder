@@ -17,8 +17,8 @@ impl RoadNetwork {
 #[derive(Debug)]
 pub struct Road {
     pub nodes: Vec<Node>,
-    pub intersection_start: u16,
-    pub intersection_end: u16,
+    pub intersection_start: usize,
+    pub intersection_end: usize,
     pub mesh_entity: Entity,
 }
 
@@ -78,7 +78,7 @@ pub enum RoadCap {
 pub struct RoadCreator {
     pub active: bool,
     pub current_road_nodes: Option<Vec<Node>>,
-    pub start_intersection: Option<u16>,
+    pub start_intersection: Option<usize>,
 }
 
 impl Default for RoadCreator {
