@@ -6,6 +6,6 @@
 version: 2
 updates:
   - package-ecosystem: "cargo" # See documentation for possible values
-    directory: "/city_builder/Cargo.tom" # Location of package manifests
+    directory: "/city_builder" # Location of package manifests
     schedule:
       interval: "daily"
