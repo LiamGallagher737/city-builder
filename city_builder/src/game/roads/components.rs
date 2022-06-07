@@ -50,6 +50,9 @@ impl Road {
 
         self.length = total_length;
     }
+    pub fn get_point_at_distance(self: &Self, distance: f32) -> Vec3 {
+        
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -74,8 +77,8 @@ impl Node {
         
         Self {
             position: position,
-            control_a: position + forward * 1.0,
-            control_b: position - forward * 1.0,
+            control_a: position + forward * 0.2,
+            control_b: position - forward * 0.2,
             next_node_distance: f32::NAN,
         }
     }
