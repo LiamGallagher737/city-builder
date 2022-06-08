@@ -9,3 +9,5 @@ updates:
     directory: "/city_builder" # Location of package manifests
     schedule:
       interval: "daily"
+      time: "07:00"
+      timezone: "Pacific/Auckland"
