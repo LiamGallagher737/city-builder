@@ -1,9 +1,9 @@
 use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::Vec3};
-use super::{components::*, road_mesh};
+use super::{components::*, road_mesh::generate_road_mesh};
 
 const NEW_NODE_DISTANCE_SQ: f32 = 1.0 * 1.0;
 const NEW_INTERSECTION_DISTANCE_SQ: f32 = 4.0 * 4.0;
-static mut DISTANCE_TRAVELED: f32 = 0.0;
+// static mut DISTANCE_TRAVELED: f32 = 0.0;
 
 pub fn road_creation_system(
     mut commands: Commands,
@@ -82,25 +82,25 @@ pub fn road_creation_system(
         }
 
         for road in &road_network.roads {
-            let mut lowest: Option<(f32, &Node)> = None;
+            let mut lowest: Option<(f32, &Node, usize)> = None;
             
             let mut n = 0_usize;
             while n < road.nodes.len() {
                 let node = &road.nodes[n];
-                let distance = node.position.distance_squared(tf.translation);
+                let distance_sq = node.position.distance_squared(tf.translation);
 
-                if distance > 10.0 * 10.0 {
-                    n += distance.floor() as usize - 10_usize;
+                if distance_sq > 10.0 * 10.0 {
+                    n += distance_sq.floor().sqrt() as usize - 8_usize;
                 }
 
-                if let Some((lowest_distance, _)) = lowest {
-                    if lowest_distance < distance {
+                if let Some((lowest_distance, _, _)) = lowest {
+                    if lowest_distance < distance_sq {
                         break;
                     }
                 }
 
-                if distance <= NEW_INTERSECTION_DISTANCE_SQ {
-                    lowest = Some((distance, node));
+                if distance_sq <= NEW_INTERSECTION_DISTANCE_SQ {
+                    lowest = Some((distance_sq, node, n));
                 }
 
                 n += 1;
@@ -127,13 +127,20 @@ pub fn road_creation_system(
             intersection_start: road_creator.start_intersection.unwrap(),
             intersection_end: road_network.intersections.len() - 1,
             mesh_entity: commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(road_mesh::generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
+                mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
                 material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
                 ..Default::default()
             }).id()
         };
-
         road_network.roads.push(road);
+
+        let road_count = road_network.roads.len() - 1_usize;
+        if let Some(intersection) = road_network.intersections.last_mut() {
+            intersection.roads.insert((road_count, RoadCap::End));
+        }
+
+        road_network.intersections[road_creator.start_intersection.unwrap()].roads.insert((road_count, RoadCap::Start));
+
 
         road_creator.current_road_nodes = None;
         road_creator.start_intersection = Some(road_network.intersections.len() - 1);

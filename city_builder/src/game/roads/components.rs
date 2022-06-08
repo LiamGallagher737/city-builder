@@ -65,13 +65,13 @@ impl Node {
 
 pub struct Intersection {
     pub position: Vec3,
-    pub roads: HashSet<(u16, RoadCap)>
+    pub roads: HashSet<(usize, RoadCap)>
 }
 
 #[derive(PartialEq, Eq, Hash)]
 pub enum RoadCap {
-    _Start,
-    _End,
+    Start,
+    End,
 }
 
 #[derive(Component)]
