@@ -81,6 +81,12 @@ pub fn road_creation_system(
             }
         }
 
+        if let Some(nodes) = &road_creator.current_road_nodes {
+            if nodes.len() < 25 {
+                return;
+            }
+        }
+
         let mut lowest = None;
         for r in 0..road_network.roads.len() {
             
@@ -91,6 +97,7 @@ pub fn road_creation_system(
 
             let mut n = 0_usize;
             while n < road.nodes.len() {
+
                 let node = &road.nodes[n];
                 let distance_sq = node.position.distance_squared(tf.translation);
 
@@ -117,91 +124,94 @@ pub fn road_creation_system(
             lowest = lowest_internal;
             break;
         };
-
-        if keys.pressed(bevy::prelude::KeyCode::I) {
             
-            if let Some((r, n)) = lowest {
+        if let Some((r, n)) = lowest {
 
-                let road = road_network.roads[r].clone();
+            let road = road_network.roads[r].clone();
 
-                road_network.intersections.push(Intersection {
-                    position: tf.translation, // Change this to correct value later
-                    roads: HashSet::new(),
-                });
-                let new_intersection = road_network.intersections.len() - 1;
-    
-                let nodes = road.nodes[..n].to_vec();
-                road_network.roads.push(Road {
-                    nodes: nodes.clone(),
-                    intersection_start: road.intersection_start,
-                    intersection_end: new_intersection,
-                    mesh_entity: commands.spawn_bundle(PbrBundle {
-                        mesh: meshes.add(generate_road_mesh(&nodes)),
-                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                        ..Default::default()
-                    }).id()
-                });
-    
-                let nodes = road.nodes[n..].to_vec();
-                road_network.roads.push(Road {
-                    nodes: nodes.clone(),
-                    intersection_start: road.intersection_start,
-                    intersection_end: new_intersection,
-                    mesh_entity: commands.spawn_bundle(PbrBundle {
-                        mesh: meshes.add(generate_road_mesh(&nodes)),
-                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                        ..Default::default()
-                    }).id()
-                });
-    
-                road_network.roads.push(Road {
-                    nodes: road_creator.current_road_nodes.clone().unwrap(),
-                    intersection_start: road.intersection_start,
-                    intersection_end: new_intersection,
-                    mesh_entity: commands.spawn_bundle(PbrBundle {
-                        mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
-                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                        ..Default::default()
-                    }).id()
-                });
-    
-                commands.entity(road.mesh_entity).despawn();
-                road_network.roads.remove(r);
+            road_network.intersections.push(Intersection {
+                position: tf.translation, // Change this to correct value later
+                roads: HashSet::new(),
+            });
+            let new_intersection = road_network.intersections.len() - 1;
+
+            let nodes = road.nodes[..n].to_vec();
+            road_network.roads.push(Road {
+                nodes: nodes.clone(),
+                intersection_start: road.intersection_start,
+                intersection_end: new_intersection,
+                mesh_entity: commands.spawn_bundle(PbrBundle {
+                    mesh: meshes.add(generate_road_mesh(&nodes)),
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    ..Default::default()
+                }).id()
+            });
+
+            let nodes = road.nodes[n..].to_vec();
+            road_network.roads.push(Road {
+                nodes: nodes.clone(),
+                intersection_start: road.intersection_start,
+                intersection_end: new_intersection,
+                mesh_entity: commands.spawn_bundle(PbrBundle {
+                    mesh: meshes.add(generate_road_mesh(&nodes)),
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    ..Default::default()
+                }).id()
+            });
+
+            road_network.roads.push(Road {
+                nodes: road_creator.current_road_nodes.clone().unwrap(),
+                intersection_start: road.intersection_start,
+                intersection_end: new_intersection,
+                mesh_entity: commands.spawn_bundle(PbrBundle {
+                    mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    ..Default::default()
+                }).id()
+            });
+            road_creator.current_road_nodes = None;
+            road_creator.start_intersection = Some(new_intersection);
+
+            commands.entity(road.mesh_entity).despawn();
+            road_network.roads.remove(r);
+
+            println!("Roads: {0}, Intersections: {1}", road_network.roads.len(), road_network.intersections.len());
+        }
+
+        {
+            if !keys.just_pressed(bevy::prelude::KeyCode::Space) {
+                return;
             }
+
+            road_network.intersections.push(Intersection {
+                position: tf.translation,
+                roads: HashSet::new(),
+            });
+
+            let road = Road {
+                nodes: road_creator.current_road_nodes.clone().unwrap(),
+                intersection_start: road_creator.start_intersection.unwrap(),
+                intersection_end: road_network.intersections.len() - 1,
+                mesh_entity: commands.spawn_bundle(PbrBundle {
+                    mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    ..Default::default()
+                }).id()
+            };
+
+            road_network.roads.push(road);
+
+
+            let road_count = road_network.roads.len() - 1_usize;
+            if let Some(intersection) = road_network.intersections.last_mut() {
+                intersection.roads.insert((road_count, RoadCap::End));
+            }
+
+            road_network.intersections[road_creator.start_intersection.unwrap()].roads.insert((road_count, RoadCap::Start));
+
+            road_creator.current_road_nodes = None;
+            road_creator.start_intersection = Some(road_network.intersections.len() - 1);
         }
-
-
-        if !keys.just_pressed(bevy::prelude::KeyCode::Space) {
-            return;
-        }
-
-        road_network.intersections.push(Intersection {
-            position: tf.translation,
-            roads: HashSet::new(),
-        });
-
-        let road = Road {
-            nodes: road_creator.current_road_nodes.clone().unwrap(),
-            intersection_start: road_creator.start_intersection.unwrap(),
-            intersection_end: road_network.intersections.len() - 1,
-            mesh_entity: commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
-                material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                ..Default::default()
-            }).id()
-        };
-        road_network.roads.push(road);
-
-        let road_count = road_network.roads.len() - 1_usize;
-        if let Some(intersection) = road_network.intersections.last_mut() {
-            intersection.roads.insert((road_count, RoadCap::End));
-        }
-
-        road_network.intersections[road_creator.start_intersection.unwrap()].roads.insert((road_count, RoadCap::Start));
-
-
-        road_creator.current_road_nodes = None;
-        road_creator.start_intersection = Some(road_network.intersections.len() - 1);
 
     }
 }

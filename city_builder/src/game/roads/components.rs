@@ -1,5 +1,6 @@
 use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
 
+#[derive(Debug)]
 pub struct RoadNetwork {
     pub roads: Vec<Road>,
     pub intersections: Vec<Intersection>,
@@ -23,7 +24,7 @@ pub struct Road {
 }
 
 impl Road {
-    pub fn calculate_point_at_distance(self: &Self, distance: f32) -> Option<(Vec3, Quat)> {
+    pub fn _calculate_point_at_distance(self: &Self, distance: f32) -> Option<(Vec3, Quat)> {
         let node_index = distance.floor() as usize;
 
         if self.nodes.len() <= node_index + 1 {
@@ -63,12 +64,13 @@ impl Node {
     }
 }
 
+#[derive(Debug)]
 pub struct Intersection {
     pub position: Vec3,
     pub roads: HashSet<(usize, RoadCap)>
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(Debug, PartialEq, Eq, Hash)]
 pub enum RoadCap {
     Start,
     End,

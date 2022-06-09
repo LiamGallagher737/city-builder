@@ -1,5 +1,4 @@
 use bevy::prelude::*;
-// use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, LogDiagnosticsPlugin};
 use bevy::window::PresentMode;
 
 mod game;
@@ -24,8 +23,8 @@ fn main() {
         .add_plugins(game::GamePlugins)
 
         // Performance Metrics
-        // .add_plugin(LogDiagnosticsPlugin::default())
-        // .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        // .add_plugin(bevy::diagnostic::LogDiagnosticsPlugin::default())
+        // .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
 
         // Startup Settings
         .add_startup_system(scene_setup) 
