@@ -154,6 +154,17 @@ pub fn road_creation_system(
                     }).id()
                 });
     
+                road_network.roads.push(Road {
+                    nodes: road_creator.current_road_nodes.clone().unwrap(),
+                    intersection_start: road.intersection_start,
+                    intersection_end: new_intersection,
+                    mesh_entity: commands.spawn_bundle(PbrBundle {
+                        mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes.as_ref().unwrap())),
+                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                        ..Default::default()
+                    }).id()
+                });
+    
                 commands.entity(road.mesh_entity).despawn();
                 road_network.roads.remove(r);
             }
