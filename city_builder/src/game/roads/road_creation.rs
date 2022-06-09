@@ -81,9 +81,14 @@ pub fn road_creation_system(
             }
         }
 
-        for road in &road_network.roads {
-            let mut lowest: Option<(f32, &Node, usize)> = None;
+        let mut lowest = None;
+        for r in 0..road_network.roads.len() {
             
+            let mut lowest_distance = f32::INFINITY;
+            let mut lowest_internal: Option<(usize, usize)> = None;
+
+            let road = &road_network.roads[r];
+
             let mut n = 0_usize;
             while n < road.nodes.len() {
                 let node = &road.nodes[n];
@@ -93,25 +98,67 @@ pub fn road_creation_system(
                     n += distance_sq.floor().sqrt() as usize - 8_usize;
                 }
 
-                if let Some((lowest_distance, _, _)) = lowest {
-                    if lowest_distance < distance_sq {
-                        break;
-                    }
+                if lowest_distance < distance_sq {
+                    break;
                 }
 
                 if distance_sq <= NEW_INTERSECTION_DISTANCE_SQ {
-                    lowest = Some((distance_sq, node, n));
+                    lowest_distance = distance_sq;
+                    lowest_internal = Some((r, n));
                 }
 
                 n += 1;
             }
 
-            if lowest.is_none() {
+            if lowest_internal.is_none() {
                 continue;
             }
 
-            println!("{:#?}", lowest);
+            lowest = lowest_internal;
+            break;
+        };
+
+        if keys.pressed(bevy::prelude::KeyCode::I) {
+            
+            if let Some((r, n)) = lowest {
+
+                let road = road_network.roads[r].clone();
+
+                road_network.intersections.push(Intersection {
+                    position: tf.translation, // Change this to correct value later
+                    roads: HashSet::new(),
+                });
+                let new_intersection = road_network.intersections.len() - 1;
+    
+                let nodes = road.nodes[..n].to_vec();
+                road_network.roads.push(Road {
+                    nodes: nodes.clone(),
+                    intersection_start: road.intersection_start,
+                    intersection_end: new_intersection,
+                    mesh_entity: commands.spawn_bundle(PbrBundle {
+                        mesh: meshes.add(generate_road_mesh(&nodes)),
+                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                        ..Default::default()
+                    }).id()
+                });
+    
+                let nodes = road.nodes[n..].to_vec();
+                road_network.roads.push(Road {
+                    nodes: nodes.clone(),
+                    intersection_start: road.intersection_start,
+                    intersection_end: new_intersection,
+                    mesh_entity: commands.spawn_bundle(PbrBundle {
+                        mesh: meshes.add(generate_road_mesh(&nodes)),
+                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                        ..Default::default()
+                    }).id()
+                });
+    
+                commands.entity(road.mesh_entity).despawn();
+                road_network.roads.remove(r);
+            }
         }
+
 
         if !keys.just_pressed(bevy::prelude::KeyCode::Space) {
             return;

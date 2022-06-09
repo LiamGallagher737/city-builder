@@ -14,7 +14,7 @@ impl RoadNetwork {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Road {
     pub nodes: Vec<Node>,
     pub intersection_start: usize,
