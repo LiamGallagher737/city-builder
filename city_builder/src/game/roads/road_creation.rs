@@ -1,5 +1,5 @@
-use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::Vec3};
-use super::{components::*, road_mesh::generate_road_mesh, road_network::{ROAD_NODE_DISTANCE_SQ, ROAD_NODE_DISTANCE, ROAD_NODE_DISTANCE_USIZE}};
+use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::{Vec3, Vec2}};
+use super::{components::*, road_mesh::generate_road_mesh, road_network::{ROAD_NODE_DISTANCE_SQ, ROAD_NODE_DISTANCE_USIZE}};
 
 const NEW_INTERSECTION_DISTANCE_SQ: f32 = 4.0 * 4.0;
 // static mut DISTANCE_TRAVELED: f32 = 0.0;
@@ -62,10 +62,12 @@ pub fn road_creation_system(
         }
         // Start of actual code
 
+        // Initialize road nodes
         if road_creator.current_road_nodes.is_none() {
             road_creator.current_road_nodes = Some(vec![Node::new(tf.translation)]);
         }
 
+        // Initialize start intersection
         if road_creator.start_intersection.is_none() {
             road_network.intersections.push(Intersection {
                 position: tf.translation,
@@ -74,21 +76,25 @@ pub fn road_creation_system(
             road_creator.start_intersection = Some(road_network.intersections.len() - 1);
         }
 
+        // Add new node if over certain distance
         if let Some(last_node) = &road_creator.last_node() {
             if last_node.position.distance_squared(tf.translation) >= ROAD_NODE_DISTANCE_SQ as f32 {
                 road_creator.current_road_nodes.as_mut().unwrap().push(Node::new(tf.translation));
             }
         }
 
+        // Dont continue checking for intersections if we just recently made one
         if let Some(nodes) = &road_creator.current_road_nodes {
             if nodes.len() < 5 {
                 return;
             }
         }
 
+        // Check for valid intersection
         let mut lowest = None;
         for r in 0..road_network.roads.len() {
             
+            // Storage for lowest values
             let mut lowest_distance = f32::INFINITY;
             let mut lowest_internal: Option<(usize, usize)> = None;
 
@@ -97,18 +103,23 @@ pub fn road_creation_system(
             let mut n = 0_usize;
             while n < road.nodes.len() {
 
-                let node = &road.nodes[n];
-                let distance_sq = node.position.distance_squared(tf.translation);
+                let distance_sq = road.nodes[n].position.distance_squared(tf.translation);
 
+                // If node is far away then there is not point checking its 
+                // neighbours so we skip them based on how large the distance is
                 if distance_sq > 10.0 * 10.0 {
-                    // do some performane testing on this
+                    // TODO: do some performance testing on this (sqrt)
                     n += (distance_sq.floor().sqrt() as usize / ROAD_NODE_DISTANCE_USIZE) - 5_usize;
                 }
 
+                // Since the distance checks overlap we try get the lowest by 
+                // checking even if we have one within range and only stopping 
+                // once the distance starts increasing again
                 if lowest_distance < distance_sq {
                     break;
                 }
 
+                // If within range then set lowest variables to it
                 if distance_sq <= NEW_INTERSECTION_DISTANCE_SQ {
                     lowest_distance = distance_sq;
                     lowest_internal = Some((r, n));
@@ -124,17 +135,27 @@ pub fn road_creation_system(
             lowest = lowest_internal;
             break;
         };
-            
+        
+        // If we found a valid intersection then create one
         if let Some((r, n)) = lowest {
 
             let road = road_network.roads[r].clone();
 
+            // Find the point to create the intersection at
+            if let Some(other_node) = road.nodes.get(n + 1) {
+                
+            } else if let Some(other_node) = road.nodes.get(n - 1) {
+
+            }
+
+            // Create a new intersection at the point
             road_network.intersections.push(Intersection {
                 position: tf.translation, // Change this to correct value later
                 roads: HashSet::new(),
             });
             let new_intersection = road_network.intersections.len() - 1;
 
+            // Create first half road
             let nodes = road.nodes[..n].to_vec();
             road_network.roads.push(Road {
                 nodes: nodes.clone(),
@@ -147,6 +168,7 @@ pub fn road_creation_system(
                 }).id()
             });
 
+            // Create second half road
             let nodes = road.nodes[n..].to_vec();
             road_network.roads.push(Road {
                 nodes: nodes.clone(),
@@ -159,6 +181,7 @@ pub fn road_creation_system(
                 }).id()
             });
 
+            // Create current road
             road_network.roads.push(Road {
                 nodes: road_creator.current_road_nodes.clone().unwrap(),
                 intersection_start: road.intersection_start,
@@ -172,6 +195,7 @@ pub fn road_creation_system(
             road_creator.current_road_nodes = None;
             road_creator.start_intersection = Some(new_intersection);
 
+            // Remove old road
             commands.entity(road.mesh_entity).despawn();
             road_network.roads.remove(r);
 
@@ -215,3 +239,18 @@ pub fn road_creation_system(
 
     }
 }
+
+// fn calculate_intersection_line_segment(a: Vec2, b: Vec2, c: Vec2, d: Vec2) -> Option<Vec2> {
+//     let ab = b - a;
+//     let cd = d - c;
+//     let ab_cross_cd = ab.perp_dot(cd);
+//
+//     if ab_cross_cd == 0.0 {
+//         return None;
+//     }
+//
+//     let ac = c - a;
+//     let t1 = ac.perp_dot(cd) / ab_cross_cd;
+//     let t2 = -ab.perp_dot(ac) / ab_cross_cd;
+//     Some(a + ab * t1)
+// }

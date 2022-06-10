@@ -5,14 +5,15 @@ mod game;
 mod lib;
 
 fn main() {
+
     App::new()
 
         // Window Settings
         .insert_resource(WindowDescriptor {
             title: "city_builder.exe".to_string(),
             present_mode: PresentMode::Immediate,
-            width: 750.0,
-            height: 500.0,
+            // width: 750.0,
+            // height: 500.0,
             ..Default::default()
         })
 
@@ -29,7 +30,7 @@ fn main() {
         // Startup Settings
         .add_startup_system(scene_setup) 
 
-        
+        // Run the app
         .run();
 }
 
