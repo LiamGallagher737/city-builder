@@ -2,6 +2,10 @@ use bevy::prelude::*;
 
 use super::components::*;
 
+pub const ROAD_NODE_DISTANCE: u8 = 2;
+pub const ROAD_NODE_DISTANCE_USIZE: usize = ROAD_NODE_DISTANCE as usize;
+pub const ROAD_NODE_DISTANCE_SQ: u8 = ROAD_NODE_DISTANCE * ROAD_NODE_DISTANCE;
+
 pub fn road_network_startup_system(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,

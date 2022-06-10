@@ -11,8 +11,8 @@ fn main() {
         .insert_resource(WindowDescriptor {
             title: "city_builder.exe".to_string(),
             present_mode: PresentMode::Immediate,
-            // width: 750.0,
-            // height: 500.0,
+            width: 750.0,
+            height: 500.0,
             ..Default::default()
         })
 

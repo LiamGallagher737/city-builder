@@ -1,7 +1,6 @@
 use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::Vec3};
-use super::{components::*, road_mesh::generate_road_mesh};
+use super::{components::*, road_mesh::generate_road_mesh, road_network::{ROAD_NODE_DISTANCE_SQ, ROAD_NODE_DISTANCE, ROAD_NODE_DISTANCE_USIZE}};
 
-const NEW_NODE_DISTANCE_SQ: f32 = 1.0 * 1.0;
 const NEW_INTERSECTION_DISTANCE_SQ: f32 = 4.0 * 4.0;
 // static mut DISTANCE_TRAVELED: f32 = 0.0;
 
@@ -75,14 +74,14 @@ pub fn road_creation_system(
             road_creator.start_intersection = Some(road_network.intersections.len() - 1);
         }
 
-        if let Some(last_node) = road_creator.last_node() {
-            if last_node.position.distance_squared(tf.translation) >= NEW_NODE_DISTANCE_SQ {
+        if let Some(last_node) = &road_creator.last_node() {
+            if last_node.position.distance_squared(tf.translation) >= ROAD_NODE_DISTANCE_SQ as f32 {
                 road_creator.current_road_nodes.as_mut().unwrap().push(Node::new(tf.translation));
             }
         }
 
         if let Some(nodes) = &road_creator.current_road_nodes {
-            if nodes.len() < 25 {
+            if nodes.len() < 5 {
                 return;
             }
         }
@@ -102,7 +101,8 @@ pub fn road_creation_system(
                 let distance_sq = node.position.distance_squared(tf.translation);
 
                 if distance_sq > 10.0 * 10.0 {
-                    n += distance_sq.floor().sqrt() as usize - 8_usize;
+                    // do some performane testing on this
+                    n += (distance_sq.floor().sqrt() as usize / ROAD_NODE_DISTANCE_USIZE) - 5_usize;
                 }
 
                 if lowest_distance < distance_sq {
