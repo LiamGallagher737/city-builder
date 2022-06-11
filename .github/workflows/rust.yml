@@ -20,6 +20,6 @@ jobs:
     - name: Build
       working-directory: ./city_builder
       run: cargo build --verbose
-    - name: Run tests
+    - name: Tests
       working-directory: ./city_builder
       run: cargo test --verbose
