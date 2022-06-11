@@ -70,6 +70,15 @@ pub struct Intersection {
     pub roads: HashSet<(usize, RoadCap)>
 }
 
+impl Intersection {
+    pub fn new(position: Vec3) -> Self {
+        Self {
+            position,
+            roads: HashSet::new(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Eq, Hash)]
 pub enum RoadCap {
     Start,
@@ -79,27 +88,18 @@ pub enum RoadCap {
 #[derive(Component)]
 pub struct RoadCreator {
     pub active: bool,
-    pub current_road_nodes: Option<Vec<Node>>,
-    pub start_intersection: Option<usize>,
+    pub current_road_nodes: Vec<Node>,
+    pub start_intersection: usize,
+    pub can_create_intersection: bool,
 }
 
 impl Default for RoadCreator {
     fn default() -> Self {
         Self {
             active: true, // Set this to false later
-            current_road_nodes: None,
-            start_intersection: None,
+            current_road_nodes: Vec::new(),
+            start_intersection: 0,
+            can_create_intersection: false,
         }
-    }
-}
-
-impl RoadCreator {
-    pub fn last_node(self: &Self) -> Option<Node>{
-        if let Some(nodes) = self.current_road_nodes.as_ref() {
-            if let Some(last_node) = nodes.last() {
-                return Some(last_node.clone());
-            }
-        }
-        None
     }
 }
