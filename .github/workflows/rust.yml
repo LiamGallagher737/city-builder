@@ -1,0 +1,25 @@
+name: Rust
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: full
+
+jobs:
+  build:
+
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Build
+      working-directory: ./city_builder
+      run: cargo build --verbose
+    - name: Tests
+      working-directory: ./city_builder
+      run: cargo test --verbose
