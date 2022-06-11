@@ -17,6 +17,8 @@ jobs:
     steps:
     - uses: actions/checkout@v3
     - name: Build
+      working-directory: ./city_builder
       run: cargo build --verbose
     - name: Run tests
+      working-directory: ./city_builder
       run: cargo test --verbose
