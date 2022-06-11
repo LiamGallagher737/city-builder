@@ -6,15 +6,6 @@ pub struct RoadNetwork {
     pub intersections: Vec<Intersection>,
 }
 
-impl RoadNetwork {
-    pub fn new() -> Self {
-        Self {
-            roads: Vec::new(),
-            intersections: Vec::new(),
-        }
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Road {
     pub nodes: Vec<Node>,
@@ -56,10 +47,10 @@ pub struct Node {
 }
 
 impl Node {
-    // Creates a new node as chosen position and generates 2 control nodes based on rotation
-    pub fn new(position: Vec3) -> Self {      
+    #[inline(always)]
+    pub fn new(position: Vec3) -> Self {
         Self {
-            position: position,
+            position,
         }
     }
 }

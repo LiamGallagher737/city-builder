@@ -1,5 +1,4 @@
-use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::{Vec3, Vec2}};
-use bevy::math::Vec3Swizzles;
+use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::Vec3};
 use super::{components::*, road_mesh::generate_road_mesh, road_network::{ROAD_NODE_DISTANCE, ROAD_NODE_DISTANCE_SQ}};
 
 const NEW_INTERSECTION_DISTANCE_SQ: f32 = 3.5 * 3.5;
@@ -136,32 +135,9 @@ pub fn road_creation_system(
 
             let road = road_network.roads[r].clone();
 
-            // Find the point to create the intersection at
-            let forward = tf.forward().xz();
-            let node = &road.nodes[n];
-
-            let check_intersect = |other: Option<&Node>| {
-                if let Some(other_node) = other {
-                    if let Some(point) = calculate_line_segments_intersection(tf.translation.xz(), forward * 5.0, node.position.xz(), other_node.position.xz()) {
-                        return Some(point);
-                    }
-                }
-                None
-            };
-
-            let intersection_position = node.position;
-            // if let Some(point) = check_intersect(road.nodes.get(n + 1)) {
-            //     intersection_position = point;
-            // } else if let Some(point) = check_intersect(road.nodes.get(n - 1)) {
-            //     intersection_position = point;
-            // } else {
-            //
-            // }
-
-
             // Create a new intersection at the point
             road_network.intersections.push(Intersection {
-                position: intersection_position, // Change this to correct value later
+                position: road.nodes[n].position,
                 roads: HashSet::new(),
             });
             let new_intersection = road_network.intersections.len() - 1;
@@ -252,82 +228,12 @@ pub fn road_creation_system(
     }
 }
 
-fn calculate_line_segments_intersection(s1: Vec2, e1: Vec2, s2: Vec2, e2: Vec2) -> Option<Vec2> {
-
-    // https://github.com/ucarion/line_intersection/blob/master/src/lib.rs
-
-    let p = s1;
-    let q = s2;
-    let r = e1 - s1;
-    let s = e2 - s2;
-
-    let r_cross_s = r.perp_dot(s);
-
-    if r_cross_s == 0.0 {
-        return None;
-    }
-
-    let q_minus_p = q - p;
-
-    let t = q_minus_p.perp_dot(s / r_cross_s);
-    let u = q_minus_p.perp_dot(r / r_cross_s);
-
-    if 0.0 <= t && t <= 1.0 && 0.0 <= u && u <= 1.0 {
-        return Some(Vec2::new(p.x + t * r.x, p.y + t * r.y));
-    }
-
-    None
-}
-
 mod tests {
     #![allow(unused_imports)]
-    use bevy::math::Vec2;
-    use super::calculate_line_segments_intersection;
+    use super::*;
 
     #[test]
-    fn valid_intersection_point_tests() {
-        let s1 = Vec2::new(0.0, 0.0);
-        let e1 = Vec2::new(5.0, 5.0);
+    fn test() {
 
-        let s2 = Vec2::new(5.0, 0.0);
-        let e2 = Vec2::new(0.0, 5.0);
-
-        let intersection = calculate_line_segments_intersection(s1, e1, s2, e2);
-
-        assert_eq!(intersection, Some(Vec2::new(2.5, 2.5)));
-
-        let s1 = Vec2::new(-1.0, 5.8);
-        let e1 = Vec2::new(5.0, 5.0);
-
-        let s2 = Vec2::new(3.0, 6.0);
-        let e2 = Vec2::new(-2.0, 3.0);
-
-        let intersection = calculate_line_segments_intersection(s1, e1, s2, e2);
-
-        // assert_eq!(intersection, Some(Vec2::new(2.0, 5.4)));
-        assert!(intersection.unwrap().distance(Vec2::new(2.0, 5.4)) < 0.000001);
-    }
-
-    #[test]
-    fn invalid_intersection_point_test() {
-        let s1 = Vec2::new(0.0, 0.0);
-        let e1 = Vec2::new(5.0, 5.0);
-
-        let s2 = Vec2::new(5.0, 8.0);
-        let e2 = Vec2::new(0.0, 5.0);
-
-        let intersection = calculate_line_segments_intersection(s1, e1, s2, e2);
-
-        assert_eq!(intersection, None);
-
-        let s1 = Vec2::new(-1.0, 5.8);
-        let e1 = Vec2::new(5.0, 5.0);
-
-        let s2 = Vec2::new(6.0, 5.0);
-        let e2 = Vec2::new(-2.0, 3.0);
-
-        let intersection = calculate_line_segments_intersection(s1, e1, s2, e2);
-
-        assert_eq!(intersection, None);
     }
 }
