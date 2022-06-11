@@ -19,9 +19,7 @@ jobs:
     - uses: actions/checkout@v3
     - name: Build
       working-directory: ./city_builder
-      run: |
-        sudo apt install libasound2-dev
-        cargo build --verbose
+      run: cargo build --verbose
     - name: Run tests
       working-directory: ./city_builder
       run: cargo test --verbose
