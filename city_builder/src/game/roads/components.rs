@@ -76,19 +76,6 @@ impl Intersection {
             roads: HashSet::new(),
         }
     }
-    pub fn clear_nearby_nodes(self: &Self, road_network: &mut ResMut<RoadNetwork>) {
-        for (connection, _) in &self.roads {
-            let mut nodes_to_remove = HashSet::new();
-            for n in 0..road_network.roads[*connection].nodes.len() {
-                if road_network.roads[*connection].nodes[n].position.distance_squared(self.position) <= INTERSECTION_RADIUS_SQ {
-                    nodes_to_remove.insert(n);
-                }
-            }
-            for n in nodes_to_remove {
-                road_network.roads[*connection].nodes.remove(n);
-            }
-        }
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

@@ -90,13 +90,20 @@ pub fn road_creation_system(
             );
 
             // New road
+            let nodes = clear_nearby_nodes(
+                road_network.intersections[road_creator.start_intersection].position,
+                &clear_nearby_nodes(
+                    road_network.intersections[new_intersection_key].position,
+                    &road_creator.current_road_nodes.clone(),
+                ),
+            );
             let new_road_key = road_network.roads.insert(
                 Road {
-                    nodes: road_creator.current_road_nodes.clone(),
+                    nodes: nodes.clone(),
                     intersection_start: road_creator.start_intersection,
                     intersection_end: new_intersection_key,
                     mesh_entity: commands.spawn_bundle(PbrBundle {
-                        mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes)),
+                        mesh: meshes.add(generate_road_mesh(&nodes)),
                         material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
                         ..Default::default()
                     }).id()
@@ -147,9 +154,16 @@ pub fn road_creation_system(
 
         if let OnIntersection(intersection_key) = check_intersection_result {
 
+            let nodes = clear_nearby_nodes(
+                road_network.intersections[road_creator.start_intersection].position,
+           &clear_nearby_nodes(
+                    road_network.intersections[intersection_key].position,
+                    &road_creator.current_road_nodes.clone(),
+                ),
+            );
             let new_road_key = road_network.roads.insert(
                 Road {
-                    nodes: road_creator.current_road_nodes.clone(),
+                    nodes: nodes,
                     intersection_start: road_creator.start_intersection,
                     intersection_end: intersection_key,
                     mesh_entity: commands.spawn_bundle(PbrBundle {
@@ -173,16 +187,18 @@ pub fn road_creation_system(
 
             let road_data = road_network.roads[road_key].clone();
 
+            let intersection_position = road_data.nodes[node_index].position;
+
             // Create a new intersection at the point
             let new_intersection_key = road_network.intersections.insert(
                 Intersection {
-                    position: road_data.nodes[node_index].position,
+                    position: intersection_position,
                     roads: HashSet::new(),
                 }
             );
 
             // Create first half road
-            let nodes = road_data.nodes[..node_index].to_vec();
+            let nodes = clear_nearby_nodes(intersection_position, &road_data.nodes[..node_index].to_vec());
             let road_a_key = road_network.roads.insert(
                 Road {
                     nodes: nodes.clone(),
@@ -197,7 +213,7 @@ pub fn road_creation_system(
             );
 
             // Create second half road
-            let nodes = road_data.nodes[node_index..].to_vec();
+            let nodes = clear_nearby_nodes(intersection_position, &road_data.nodes[node_index..].to_vec());
             let road_b_key = road_network.roads.insert(
                 Road {
                     nodes: nodes.clone(),
@@ -212,13 +228,14 @@ pub fn road_creation_system(
             );
 
             // Create current road
+            let nodes = clear_nearby_nodes(intersection_position, &road_creator.current_road_nodes.clone());
             let current_road_key = road_network.roads.insert(
                 Road {
-                    nodes: road_creator.current_road_nodes.clone(),
+                    nodes: nodes.clone(),
                     intersection_start: road_data.intersection_start,
                     intersection_end: new_intersection_key,
                     mesh_entity: commands.spawn_bundle(PbrBundle {
-                        mesh: meshes.add(generate_road_mesh(&road_creator.current_road_nodes)),
+                        mesh: meshes.add(generate_road_mesh(&nodes)),
                         material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
                         ..Default::default()
                     }).id()
@@ -229,9 +246,6 @@ pub fn road_creation_system(
             road_network.intersections[new_intersection_key].roads.insert((road_a_key, RoadCap::End));
             road_network.intersections[new_intersection_key].roads.insert((road_b_key, RoadCap::Start));
             road_network.intersections[new_intersection_key].roads.insert((current_road_key, RoadCap::End));
-
-            // Remove nodes to close to the new intersection
-            road_network.intersections[new_intersection_key].clone().clear_nearby_nodes(&mut road_network);
 
             // Clear road creator component
             road_creator.current_road_nodes.clear();
@@ -299,6 +313,16 @@ fn check_for_valid_intersection(
     }
 
     NotFound
+}
+
+pub fn clear_nearby_nodes(position: Vec3, nodes: &Vec<Node>) -> Vec<Node> {
+    let mut new_nodes = vec![];
+    for node in nodes {
+        if node.position.distance_squared(position) > INTERSECTION_RADIUS_SQ {
+            new_nodes.push(node.clone());
+        }
+    }
+    new_nodes
 }
 
 enum ValidIntersection {
