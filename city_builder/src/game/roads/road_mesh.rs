@@ -7,9 +7,9 @@ pub fn generate_road_mesh (
     points: &Vec<Node>,
 ) -> Mesh {
 
-    let mut vertices: Vec::<[f32; 3]> = Vec::new();
-    let mut triangles: Vec::<u16> = Vec::new();
-    let mut uvs: Vec::<[f32; 2]> = Vec::new();
+    let mut vertices: Vec<[f32; 3]> = Vec::new();
+    let mut triangles: Vec<u16> = Vec::new();
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
 
     let mut vert_index = 0;
 
@@ -66,6 +66,7 @@ fn float_array_from_vec3(p: Vec3) -> [f32; 3] {
 }
 
 mod tests {
+    #![allow(unused_imports)]
     use bevy::math::Vec3;
     use bevy::render::mesh::PrimitiveTopology;
     use super::*;

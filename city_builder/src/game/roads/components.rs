@@ -1,16 +1,24 @@
 use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
+use bevy::prelude::ResMut;
+use slotmap::{new_key_type, SlotMap};
+use super::road_network::INTERSECTION_RADIUS_SQ;
 
 #[derive(Debug)]
 pub struct RoadNetwork {
-    pub roads: Vec<Road>,
-    pub intersections: Vec<Intersection>,
+    pub roads: SlotMap<RoadKey, Road>,
+    pub intersections: SlotMap<IntersectionKey, Intersection>,
+}
+
+new_key_type! {
+    pub struct RoadKey;
+    pub struct IntersectionKey;
 }
 
 #[derive(Debug, Clone)]
 pub struct Road {
     pub nodes: Vec<Node>,
-    pub intersection_start: usize,
-    pub intersection_end: usize,
+    pub intersection_start: IntersectionKey,
+    pub intersection_end: IntersectionKey,
     pub mesh_entity: Entity,
 }
 
@@ -55,10 +63,10 @@ impl Node {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Intersection {
     pub position: Vec3,
-    pub roads: HashSet<(usize, RoadCap)>
+    pub roads: HashSet<(RoadKey, RoadCap)>
 }
 
 impl Intersection {
@@ -68,9 +76,22 @@ impl Intersection {
             roads: HashSet::new(),
         }
     }
+    pub fn clear_nearby_nodes(self: &Self, road_network: &mut ResMut<RoadNetwork>) {
+        for (connection, _) in &self.roads {
+            let mut nodes_to_remove = HashSet::new();
+            for n in 0..road_network.roads[*connection].nodes.len() {
+                if road_network.roads[*connection].nodes[n].position.distance_squared(self.position) <= INTERSECTION_RADIUS_SQ {
+                    nodes_to_remove.insert(n);
+                }
+            }
+            for n in nodes_to_remove {
+                road_network.roads[*connection].nodes.remove(n);
+            }
+        }
+    }
 }
 
-#[derive(Debug, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum RoadCap {
     Start,
     End,
@@ -79,18 +100,40 @@ pub enum RoadCap {
 #[derive(Component)]
 pub struct RoadCreator {
     pub active: bool,
+    pub just_activated: bool,
+    pub just_deactivated: bool,
     pub current_road_nodes: Vec<Node>,
-    pub start_intersection: usize,
+    pub start_intersection: IntersectionKey,
     pub can_create_intersection: bool,
 }
 
 impl Default for RoadCreator {
     fn default() -> Self {
         Self {
-            active: true, // Set this to false later
+            active: false,
+            just_activated: false,
+            just_deactivated: false,
             current_road_nodes: Vec::new(),
-            start_intersection: 0,
+            start_intersection: IntersectionKey::default(),
             can_create_intersection: false,
         }
+    }
+}
+
+impl RoadCreator {
+    pub fn toggle_active(self: &mut Self) {
+        if self.active {
+            self.deactivate();
+        } else {
+            self.activate();
+        }
+    }
+    pub fn activate(self: &mut Self) {
+        self.active = true;
+        self.just_activated = true;
+    }
+    pub fn deactivate(self: &mut Self) {
+        self.active = false;
+        self.just_deactivated = true;
     }
 }

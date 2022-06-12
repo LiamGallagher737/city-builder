@@ -1,9 +1,12 @@
 use bevy::prelude::*;
+use slotmap::SlotMap;
 
 use super::components::*;
 
 pub const ROAD_NODE_DISTANCE: f32 = 2.0;
 pub const ROAD_NODE_DISTANCE_SQ: f32 = ROAD_NODE_DISTANCE * ROAD_NODE_DISTANCE;
+pub const INTERSECTION_RADIUS: f32 = 4.0;
+pub const INTERSECTION_RADIUS_SQ: f32 = INTERSECTION_RADIUS * INTERSECTION_RADIUS;
 
 pub fn road_network_startup_system(
     mut commands: Commands,
@@ -12,8 +15,8 @@ pub fn road_network_startup_system(
 ) {
 
     let road_network = RoadNetwork {
-        roads: vec![],
-        intersections: vec![Intersection::new(Vec3::ZERO)],
+        roads: SlotMap::with_key(),
+        intersections: SlotMap::with_key(),
     };
 
     commands.insert_resource(road_network);
