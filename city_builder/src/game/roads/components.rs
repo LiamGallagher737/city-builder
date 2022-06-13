@@ -64,7 +64,8 @@ impl Node {
 #[derive(Debug, Clone)]
 pub struct Intersection {
     pub position: Vec3,
-    pub roads: HashSet<(RoadKey, RoadCap)>
+    pub roads: HashSet<(RoadKey, RoadCap)>,
+    pub mesh_entity: Option<Entity>,
 }
 
 impl Intersection {
@@ -72,6 +73,7 @@ impl Intersection {
         Self {
             position,
             roads: HashSet::new(),
+            mesh_entity: None,
         }
     }
 }

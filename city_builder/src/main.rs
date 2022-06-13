@@ -27,6 +27,9 @@ fn main() {
         // .add_plugin(bevy::diagnostic::LogDiagnosticsPlugin::default())
         // .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
 
+        // Debugging
+        .add_plugin(bevy::pbr::wireframe::WireframePlugin)
+
         // Startup Settings
         .add_startup_system(scene_setup) 
 
@@ -38,11 +41,14 @@ fn scene_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut wireframe_config: ResMut<bevy::pbr::wireframe::WireframeConfig>, // Wireframe Mode Debugging
 ) {
+
+    wireframe_config.global = true; // Wireframe Mode Debugging
 
     // Camera
     commands.spawn_bundle(PerspectiveCameraBundle {
-        transform: Transform::from_xyz(-2.0, 10.0, 5.0).looking_at(Vec3::ZERO, Vec3::Y),
+        transform: Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
         ..default()
     });
 

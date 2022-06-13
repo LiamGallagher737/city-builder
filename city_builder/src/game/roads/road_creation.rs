@@ -1,4 +1,4 @@
-use bevy::{utils::hashbrown::HashSet, prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::Vec3};
+use bevy::{prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::Vec3};
 use crate::game::roads::road_network::INTERSECTION_RADIUS_SQ;
 use super::{components::*, road_mesh::generate_road_mesh, road_network::{ROAD_NODE_DISTANCE, ROAD_NODE_DISTANCE_SQ}, road_creation::ValidIntersection::{NotFound, OnIntersection, OnRoad}};
 
@@ -82,24 +82,25 @@ pub fn road_creation_system(
             road_creator.just_deactivated = false;
 
             // New intersection
-            let new_intersection_key = road_network.intersections.insert(
-                Intersection {
-                    position: tf.translation,
-                    roads: HashSet::new(),
-                }
+            let intersection_key = road_network.intersections.insert(
+                Intersection::new(tf.translation)
             );
 
             // New road
             let new_road_key = generate_road(
                 &road_creator.current_road_nodes,
                 road_creator.start_intersection,
-                new_intersection_key,
+                intersection_key,
                 &mut commands, &mut meshes, &mut materials, &mut road_network
             );
 
             // Give intersections reference to new road
-            road_network.intersections[new_intersection_key].roads.insert((new_road_key, RoadCap::End));
+            road_network.intersections[intersection_key].roads.insert((new_road_key, RoadCap::End));
             road_network.intersections[road_creator.start_intersection].roads.insert((new_road_key, RoadCap::Start));
+
+            let roads = road_network.roads.clone();
+            road_network.intersections[intersection_key].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
+            road_network.intersections[road_creator.start_intersection].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
 
             // Reset road creator component
             road_creator.current_road_nodes.clear();
@@ -151,6 +152,10 @@ pub fn road_creation_system(
             road_network.intersections[road_creator.start_intersection].roads.insert((road_key, RoadCap::Start));
             road_network.intersections[intersection_key].roads.insert((road_key, RoadCap::End));
 
+            let roads = road_network.roads.clone();
+            road_network.intersections[road_creator.start_intersection].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
+            road_network.intersections[intersection_key].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
+
             road_creator.current_road_nodes.clear();
             road_creator.start_intersection = intersection_key;
             road_creator.can_create_intersection = false;
@@ -164,25 +169,22 @@ pub fn road_creation_system(
             let intersection_position = road_data.nodes[node_index].position;
 
             // Create a new intersection at the point
-            let new_intersection_key = road_network.intersections.insert(
-                Intersection {
-                    position: intersection_position,
-                    roads: HashSet::new(),
-                }
+            let intersection_key = road_network.intersections.insert(
+                Intersection::new(intersection_position)
             );
 
             // Create first half road
             let road_a_key = generate_road(
                 &road_data.nodes[..node_index].to_vec(),
                 road_data.intersection_start,
-                new_intersection_key,
+                intersection_key,
                 &mut commands, &mut meshes, &mut materials, &mut road_network
             );
 
             // Create second half road
             let  road_b_key = generate_road(
                 &road_data.nodes[node_index..].to_vec(),
-                new_intersection_key,
+                intersection_key,
                 road_data.intersection_end,
                 &mut commands, &mut meshes, &mut materials, &mut road_network
             );
@@ -191,18 +193,24 @@ pub fn road_creation_system(
             let current_road_key = generate_road(
                 &road_creator.current_road_nodes,
                 road_creator.start_intersection,
-                new_intersection_key,
+                intersection_key,
                 &mut commands, &mut meshes, &mut materials, &mut road_network
             );
 
-            // Give intersection references to new roads
-            road_network.intersections[new_intersection_key].roads.insert((road_a_key, RoadCap::End));
-            road_network.intersections[new_intersection_key].roads.insert((road_b_key, RoadCap::Start));
-            road_network.intersections[new_intersection_key].roads.insert((current_road_key, RoadCap::End));
+            // Give intersections references to new roads
+            road_network.intersections[intersection_key].roads.insert((road_a_key, RoadCap::End));
+            road_network.intersections[intersection_key].roads.insert((road_b_key, RoadCap::Start));
+            road_network.intersections[intersection_key].roads.insert((current_road_key, RoadCap::End));
+            road_network.intersections[road_creator.start_intersection].roads.insert((current_road_key, RoadCap::Start));
+
+            // Generate intersection mesh
+            let roads = road_network.roads.clone();
+            road_network.intersections[intersection_key].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
+            road_network.intersections[road_creator.start_intersection].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
 
             // Clear road creator component
             road_creator.current_road_nodes.clear();
-            road_creator.start_intersection = new_intersection_key;
+            road_creator.start_intersection = intersection_key;
             road_creator.can_create_intersection = false;
 
             // Remove old road
@@ -300,7 +308,7 @@ fn generate_road(
 pub fn clear_nearby_nodes(position: Vec3, nodes: &Vec<Node>) -> Vec<Node> {
     let mut new_nodes = vec![];
     for node in nodes {
-        if node.position.distance_squared(position) > INTERSECTION_RADIUS_SQ {
+        if node.position.distance_squared(position) > INTERSECTION_RADIUS_SQ * 1.1 {
             new_nodes.push(node.clone());
         }
     }

@@ -1,4 +1,7 @@
-use bevy::{prelude::{Mesh, Vec3}, render::mesh::{Indices, VertexAttributeValues}};
+use bevy::{prelude::{Mesh, Vec3}, render::mesh::{Indices, VertexAttributeValues, PrimitiveTopology::TriangleList}};
+use bevy::prelude::{Assets, Color, Commands, PbrBundle, ResMut, StandardMaterial};
+use slotmap::SlotMap;
+use crate::game::roads::components::{Intersection, Road, RoadCap, RoadKey};
 use super::components::Node;
 
 const ROAD_WIDTH: f32 = 3.5;
@@ -51,13 +54,76 @@ pub fn generate_road_mesh (
         vert_index += 2;
     }
 
-    let mut mesh = Mesh::new(bevy::render::mesh::PrimitiveTopology::TriangleList);
+    let mut mesh = Mesh::new(TriangleList);
     mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
     mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
     mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
     mesh.set_indices(Some(Indices::U16(triangles)));
 
     mesh
+}
+
+impl Intersection {
+    pub fn generate_intersection_mesh(
+        self: &mut Self, roads: &SlotMap<RoadKey, Road>,
+        commands: &mut Commands,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) {
+
+        if let Some(entity) = self.mesh_entity {
+            commands.entity(entity).despawn();
+        }
+
+        let mut vertices: Vec<[f32; 3]> = Vec::new();
+        for connection in &self.roads {
+            let road_nodes = &roads[connection.0].nodes;
+
+            if road_nodes.len() < 2 {
+                continue;
+            }
+
+            let forward = match connection.1 {
+                RoadCap::Start => road_nodes[1].position - road_nodes.first().unwrap().position,
+                RoadCap::End => road_nodes.last().unwrap().position - road_nodes[road_nodes.len() - 2].position,
+            };
+
+            let forward = forward.normalize();
+            let left = Vec3::new(-forward.z, 0.0, forward.x);
+
+            let center = match connection.1 {
+                RoadCap::Start => road_nodes.first().unwrap().position,
+                RoadCap::End => road_nodes.last().unwrap().position,
+            };
+
+            vertices.push(float_array_from_vec3(center - left * ROAD_WIDTH));
+            vertices.push(float_array_from_vec3(center + left * ROAD_WIDTH));
+        }
+
+        if vertices.len() < 3 {
+            return;
+        }
+
+        let mut triangles: Vec<u16> = Vec::new();
+        for i in 2..vertices.len() as u16 {
+            triangles.push(0);
+            triangles.push(i - 1);
+            triangles.push(i);
+        }
+
+        let mut mesh = Mesh::new(TriangleList);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(vec![[0.0_32, 0.0_f32]; vertices.len()]));
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
+        mesh.set_indices(Some(Indices::U16(triangles)));
+
+        self.mesh_entity = Some(commands.spawn_bundle(PbrBundle {
+            mesh: meshes.add(mesh),
+            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+            ..Default::default()
+        }).id());
+
+    }
 }
 
 #[inline(always)]
@@ -90,7 +156,7 @@ mod tests {
 
         let mesh = generate_road_mesh(&nodes);
 
-        assert_eq!(mesh.primitive_topology(), PrimitiveTopology::TriangleList, "Topology");
+        assert_eq!(mesh.primitive_topology(), TriangleList, "Topology");
 
         assert_eq!(mesh.count_vertices(), 14, "Vertices Count");
 
@@ -240,5 +306,10 @@ mod tests {
             Indices::U32(_) => panic!("Mesh Indices are formatted as U32 instead of U16"),
         };
         assert_eq!(mesh_indices, &correct_indices, "Indices");
+    }
+
+    #[test]
+    fn correct_intersection_mesh_test() {
+        todo!()
     }
 }
