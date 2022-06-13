@@ -1,7 +1,5 @@
 use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
-use bevy::prelude::ResMut;
 use slotmap::{new_key_type, SlotMap};
-use super::road_network::INTERSECTION_RADIUS_SQ;
 
 #[derive(Debug)]
 pub struct RoadNetwork {
