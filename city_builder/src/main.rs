@@ -76,6 +76,7 @@ fn scene_setup(
     });
 }
 
+#[allow(dead_code)]
 fn debugging_setup_system(
     mut wireframe_config: ResMut<bevy::pbr::wireframe::WireframeConfig>, // Wireframe Mode Debugging
 ) {
