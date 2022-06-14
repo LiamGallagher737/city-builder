@@ -12,6 +12,10 @@ impl Road {
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
     ) {
+        if let Some(entity) = self.mesh_entity {
+            commands.entity(entity).despawn();
+        }
+
         let mut vertices: Vec<[f32; 3]> = Vec::new();
         let mut triangles: Vec<u16> = Vec::new();
         let mut uvs: Vec<[f32; 2]> = Vec::new();
@@ -78,11 +82,14 @@ impl Intersection {
         materials: &mut ResMut<Assets<StandardMaterial>>,
     ) {
 
+        // Remove old intersection mesh if one exists
         if let Some(entity) = self.mesh_entity {
             commands.entity(entity).despawn();
         }
 
-        let mut vertices: Vec<[f32; 3]> = Vec::new();
+        let mut vertex_pairs = vec![];
+
+        // Loop over connections and create pairs of vertices of the closest end of the road to the intersection
         for connection in &self.roads {
             let road_nodes = &roads[connection.0].nodes;
 
@@ -103,14 +110,45 @@ impl Intersection {
                 RoadCap::End => road_nodes.last().unwrap().position,
             };
 
-            vertices.push(float_array_from_vec3(center - left * ROAD_WIDTH));
-            vertices.push(float_array_from_vec3(center + left * ROAD_WIDTH));
+            let p0 = center - left * ROAD_WIDTH;
+            let p1 = center + left * ROAD_WIDTH;
+
+            match connection.1 {
+                RoadCap::Start => vertex_pairs.push((p1, p0)),
+                RoadCap::End => vertex_pairs.push((p0, p1)),
+            }
         }
 
-        if vertices.len() < 3 {
+        if vertex_pairs.len() < 3 {
             return;
         }
 
+        // Create a list of vertices from the pairs and sort it so they go in a clockwise rotation
+        let mut next_index = 0;
+        let mut vertices: Vec<[f32; 3]> = Vec::new();
+        while vertex_pairs.len() > 0 {
+            let pair = vertex_pairs.remove(next_index);
+            vertices.push(float_array_from_vec3(pair.0));
+            vertices.push(float_array_from_vec3(pair.1));
+
+            let mut closest_index = None;
+            let mut closest_distance = f32::INFINITY;
+            for i in 0..vertex_pairs.len() {
+                let distance_sq = pair.1.distance_squared(vertex_pairs[i].0);
+                if distance_sq < closest_distance {
+                    closest_index = Some(i);
+                    closest_distance = distance_sq;
+                }
+            }
+
+            if let Some(index) = closest_index {
+                next_index = index;
+            } else {
+                break;
+            }
+        }
+
+        // Create triangles from the vertices
         let mut triangles: Vec<u16> = Vec::new();
         for i in 2..vertices.len() as u16 {
             triangles.push(0);
@@ -118,12 +156,14 @@ impl Intersection {
             triangles.push(i);
         }
 
+        // Put together the mesh
         let mut mesh = Mesh::new(TriangleList);
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(vec![[0.0_32, 0.0_f32]; vertices.len()]));
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
         mesh.set_indices(Some(Indices::U16(triangles)));
 
+        // Spawn an entity with the mesh and assign the intersection with the entities id
         self.mesh_entity = Some(commands.spawn_bundle(PbrBundle {
             mesh: meshes.add(mesh),
             material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
@@ -136,187 +176,4 @@ impl Intersection {
 #[inline(always)]
 fn float_array_from_vec3(p: Vec3) -> [f32; 3] {
     [p.x, p.y, p.z]
-}
-
-mod tests {
-    #![allow(unused_imports)]
-    use bevy::math::Vec3;
-    use bevy::render::mesh::PrimitiveTopology;
-    use super::*;
-
-    #[test]
-    fn float_array_from_vec3_test() {
-        assert_eq!([5.0, 3.0, 8.0], float_array_from_vec3(Vec3::new(5.0, 3.0, 8.0)));
-    }
-
-    #[test]
-    fn correct_road_mesh_test() {
-        let nodes = vec![
-            Node::new(Vec3::new(0.0, 0.0, 0.0)),
-            Node::new(Vec3::new(2.0, 0.0, 0.0)),
-            Node::new(Vec3::new(4.0, 0.0, 0.0)),
-            Node::new(Vec3::new(6.0, 0.0, 0.0)),
-            Node::new(Vec3::new(7.0, 0.0, 1.0)),
-            Node::new(Vec3::new(7.0, 0.0, 3.0)),
-            Node::new(Vec3::new(7.0, 0.0, 5.0)),
-        ];
-
-        let mesh = generate_road_mesh(&nodes);
-
-        assert_eq!(mesh.primitive_topology(), TriangleList, "Topology");
-
-        assert_eq!(mesh.count_vertices(), 14, "Vertices Count");
-
-        let correct_vertices = VertexAttributeValues::Float32x3(vec![
-            [
-                0.0,
-                0.0,
-                3.5,
-            ],
-            [
-                0.0,
-                0.0,
-                -3.5,
-            ],
-            [
-                2.0,
-                0.0,
-                3.5,
-            ],
-            [
-                2.0,
-                0.0,
-                -3.5,
-            ],
-            [
-                4.0,
-                0.0,
-                3.5,
-            ],
-            [
-                4.0,
-                0.0,
-                -3.5,
-            ],
-            [
-                4.893203,
-                0.0,
-                3.3203914,
-            ],
-            [
-                7.106797,
-                0.0,
-                -3.3203914,
-            ],
-            [
-                3.6796086,
-                0.0,
-                2.1067972,
-            ],
-            [
-                10.320392,
-                0.0,
-                -0.10679722,
-            ],
-            [
-                3.5,
-                0.0,
-                3.0,
-            ],
-            [
-                10.5,
-                0.0,
-                3.0,
-            ],
-            [
-                3.5,
-                0.0,
-                5.0,
-            ],
-            [
-                10.5,
-                0.0,
-                5.0,
-            ],
-        ]);
-        assert_eq!(mesh.attribute(Mesh::ATTRIBUTE_POSITION).unwrap().get_bytes(), correct_vertices.get_bytes(), "Vertices");
-
-        let correct_normals = VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; 14]);
-        assert_eq!(mesh.attribute(Mesh::ATTRIBUTE_NORMAL).unwrap().get_bytes(), correct_normals.get_bytes(), "Normals");
-
-        let correct_uvs = VertexAttributeValues::Float32x2(vec![
-            [
-                0.0,
-                0.0,
-            ],
-            [
-                1.0,
-                0.0,
-            ],
-            [
-                0.0,
-                0.16666667,
-            ],
-            [
-                1.0,
-                0.16666667,
-            ],
-            [
-                0.0,
-                0.33333334,
-            ],
-            [
-                1.0,
-                0.33333334,
-            ],
-            [
-                0.0,
-                0.5,
-            ],
-            [
-                1.0,
-                0.5,
-            ],
-            [
-                0.0,
-                0.6666667,
-            ],
-            [
-                1.0,
-                0.6666667,
-            ],
-            [
-                0.0,
-                0.8333333,
-            ],
-            [
-                1.0,
-                0.8333333,
-            ],
-            [
-                0.0,
-                1.0,
-            ],
-            [
-                1.0,
-                1.0,
-            ],
-
-        ]);
-        assert_eq!(mesh.attribute(Mesh::ATTRIBUTE_UV_0).unwrap().get_bytes(), correct_uvs.get_bytes(), "UVs");
-
-        let correct_indices: Vec<u16> = vec![
-            0, 2, 1, 1, 2, 3, 2, 4, 3, 3, 4, 5, 4, 6, 5, 5, 6, 7, 6, 8, 7, 7, 8, 9, 8, 10, 9, 9, 10, 11, 10, 12, 11, 11, 12, 13,
-        ];
-        let mesh_indices = match mesh.indices().unwrap() {
-            Indices::U16(indices) => indices,
-            Indices::U32(_) => panic!("Mesh Indices are formatted as U32 instead of U16"),
-        };
-        assert_eq!(mesh_indices, &correct_indices, "Indices");
-    }
-
-    #[test]
-    fn correct_intersection_mesh_test() {
-        todo!()
-    }
 }

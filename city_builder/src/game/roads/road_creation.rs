@@ -285,6 +285,7 @@ fn generate_road(
     materials: &mut ResMut<Assets<StandardMaterial>>,
     road_network: &mut ResMut<RoadNetwork>,
 ) -> RoadKey {
+
     let nodes = clear_nearby_nodes(
         road_network.intersections[intersection_a].position,
         &clear_nearby_nodes(

@@ -10,11 +10,17 @@ fn main() {
 
         // Window Settings
         .insert_resource(WindowDescriptor {
+
             title: "city_builder.exe".to_string(),
             present_mode: PresentMode::Immediate,
-            // width: 750.0,
+
+            // mode: bevy::window::WindowMode::Fullscreen,
+
+            // width: 750.0,   // Uncomment when working with smaller screens
             // height: 500.0,
+
             ..Default::default()
+
         })
 
         // Bevy Plugins
@@ -28,7 +34,8 @@ fn main() {
         // .add_plugin(bevy::diagnostic::FrameTimeDiagnosticsPlugin::default())
 
         // Debugging
-        .add_plugin(bevy::pbr::wireframe::WireframePlugin)
+        // .add_plugin(bevy::pbr::wireframe::WireframePlugin)
+        // .add_startup_system(debugging_setup_system)
 
         // Startup Settings
         .add_startup_system(scene_setup) 
@@ -41,11 +48,7 @@ fn scene_setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    mut wireframe_config: ResMut<bevy::pbr::wireframe::WireframeConfig>, // Wireframe Mode Debugging
 ) {
-
-    wireframe_config.global = true; // Wireframe Mode Debugging
-
     // Camera
     commands.spawn_bundle(PerspectiveCameraBundle {
         transform: Transform::from_xyz(0.0, 10.0, 0.0).looking_at(Vec3::ZERO, Vec3::Y),
@@ -71,4 +74,10 @@ fn scene_setup(
         material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
         ..default()
     });
+}
+
+fn debugging_setup_system(
+    mut wireframe_config: ResMut<bevy::pbr::wireframe::WireframeConfig>, // Wireframe Mode Debugging
+) {
+    wireframe_config.global = true; // Wireframe Mode Debugging
 }
