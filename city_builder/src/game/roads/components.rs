@@ -17,7 +17,7 @@ pub struct Road {
     pub nodes: Vec<Node>,
     pub intersection_start: IntersectionKey,
     pub intersection_end: IntersectionKey,
-    pub mesh_entity: Entity,
+    pub mesh_entity: Option<Entity>,
 }
 
 impl Road {

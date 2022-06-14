@@ -1,6 +1,6 @@
-use bevy::{prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, Color, With, Camera, Without}, pbr::{PbrBundle, StandardMaterial}, math::Vec3};
+use bevy::{prelude::{ResMut, Query, Transform, Commands, Assets, Mesh, With, Camera, Without}, pbr::StandardMaterial, math::Vec3};
 use crate::game::roads::road_network::INTERSECTION_RADIUS_SQ;
-use super::{components::*, road_mesh::generate_road_mesh, road_network::{ROAD_NODE_DISTANCE, ROAD_NODE_DISTANCE_SQ}, road_creation::ValidIntersection::{NotFound, OnIntersection, OnRoad}};
+use super::{components::*, road_network::{ROAD_NODE_DISTANCE, ROAD_NODE_DISTANCE_SQ}, road_creation::ValidIntersection::{NotFound, OnIntersection, OnRoad}};
 
 const NEW_INTERSECTION_DISTANCE_SQ: f32 = 3.5 * 3.5;
 // static mut DISTANCE_TRAVELED: f32 = 0.0;
@@ -214,7 +214,9 @@ pub fn road_creation_system(
             road_creator.can_create_intersection = false;
 
             // Remove old road
-            commands.entity(road_data.mesh_entity).despawn();
+            if let Some(entity) = road_data.mesh_entity {
+                commands.entity(entity).despawn();
+            }
             road_network.roads.remove(road_key);
 
         }
@@ -291,18 +293,18 @@ fn generate_road(
         ),
     );
 
-    road_network.roads.insert(
+    let road_key = road_network.roads.insert(
         Road {
             nodes: nodes.clone(),
             intersection_start: intersection_a,
             intersection_end: intersection_b,
-            mesh_entity: commands.spawn_bundle(PbrBundle {
-                mesh: meshes.add(generate_road_mesh(&nodes)),
-                material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                ..Default::default()
-            }).id()
+            mesh_entity: None,
         }
-    )
+    );
+
+    road_network.roads[road_key].generate_road_mesh(&mut *commands, &mut *meshes, &mut *materials);
+
+    road_key
 }
 
 pub fn clear_nearby_nodes(position: Vec3, nodes: &Vec<Node>) -> Vec<Node> {

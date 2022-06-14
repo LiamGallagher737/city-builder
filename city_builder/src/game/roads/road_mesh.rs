@@ -2,65 +2,72 @@ use bevy::{prelude::{Mesh, Vec3}, render::mesh::{Indices, VertexAttributeValues,
 use bevy::prelude::{Assets, Color, Commands, PbrBundle, ResMut, StandardMaterial};
 use slotmap::SlotMap;
 use crate::game::roads::components::{Intersection, Road, RoadCap, RoadKey};
-use super::components::Node;
 
 const ROAD_WIDTH: f32 = 3.5;
 
-pub fn generate_road_mesh (
-    points: &Vec<Node>,
-) -> Mesh {
+impl Road {
+    pub fn generate_road_mesh(
+        self: &mut Self,
+        commands: &mut Commands,
+        meshes: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
+    ) {
+        let mut vertices: Vec<[f32; 3]> = Vec::new();
+        let mut triangles: Vec<u16> = Vec::new();
+        let mut uvs: Vec<[f32; 2]> = Vec::new();
 
-    let mut vertices: Vec<[f32; 3]> = Vec::new();
-    let mut triangles: Vec<u16> = Vec::new();
-    let mut uvs: Vec<[f32; 2]> = Vec::new();
+        let mut vert_index = 0;
 
-    let mut vert_index = 0;
+        for i in 0..self.nodes.len() {
 
-    for i in 0..points.len() {
+            let mut forward = Vec3::default();
 
-        let mut forward = Vec3::default();
+            if i < self.nodes.len() - 1 {
+                forward += self.nodes[i + 1].position - self.nodes[i].position;
+            }
 
-        if i < points.len() - 1 {
-            forward += points[i + 1].position - points[i].position;
+            if i > 0 {
+                forward += self.nodes[i].position - self.nodes[i - 1].position;
+            }
+
+            forward = forward.normalize();
+            let left = Vec3::new(-forward.z, 0.0, forward.x);
+
+            // Vertices
+            vertices.push(float_array_from_vec3(self.nodes[i].position + left * ROAD_WIDTH));
+            vertices.push(float_array_from_vec3(self.nodes[i].position - left * ROAD_WIDTH));
+
+            // Uvs
+            let completion = i as f32 / (self.nodes.len() - 1) as f32;
+            uvs.push([0.0, completion]);
+            uvs.push([1.0, completion]);
+
+            // Triangles
+            if i < self.nodes.len() - 1 {
+                triangles.push(vert_index + 0);
+                triangles.push(vert_index + 2);
+                triangles.push(vert_index + 1);
+
+                triangles.push(vert_index + 1);
+                triangles.push(vert_index + 2);
+                triangles.push(vert_index + 3);
+            }
+
+            vert_index += 2;
         }
 
-        if i > 0 {
-            forward += points[i].position - points[i - 1].position;
-        }
+        let mut mesh = Mesh::new(TriangleList);
+        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
+        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
+        mesh.set_indices(Some(Indices::U16(triangles)));
 
-        forward = forward.normalize();
-        let left = Vec3::new(-forward.z, 0.0, forward.x);
-
-        // Vertices
-        vertices.push(float_array_from_vec3(points[i].position + left * ROAD_WIDTH));
-        vertices.push(float_array_from_vec3(points[i].position - left * ROAD_WIDTH));
-
-        // Uvs
-        let completion = i as f32 / (points.len() - 1) as f32;
-        uvs.push([0.0, completion]);
-        uvs.push([1.0, completion]);
-
-        // Triangles
-        if i < points.len() - 1 {
-            triangles.push(vert_index + 0);
-            triangles.push(vert_index + 2);
-            triangles.push(vert_index + 1);
-
-            triangles.push(vert_index + 1);
-            triangles.push(vert_index + 2);
-            triangles.push(vert_index + 3);
-        }
-
-        vert_index += 2;
+        self.mesh_entity = Some(commands.spawn_bundle(PbrBundle {
+            mesh: meshes.add(mesh),
+            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+            ..Default::default()
+        }).id());
     }
-
-    let mut mesh = Mesh::new(TriangleList);
-    mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
-    mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
-    mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
-    mesh.set_indices(Some(Indices::U16(triangles)));
-
-    mesh
 }
 
 impl Intersection {
