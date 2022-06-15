@@ -21,7 +21,7 @@ pub struct Road {
 }
 
 impl Road {
-    pub fn _calculate_point_at_distance(self: &Self, distance: f32) -> Option<(Vec3, Quat)> {
+    pub fn calculate_point_at_distance(self: &Self, distance: f32) -> Option<(Vec3, Quat)> {
         let node_index = distance.floor() as usize;
 
         if self.nodes.len() <= node_index + 1 {

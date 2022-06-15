@@ -1,8 +1,11 @@
 use bevy::prelude::*;
 use bevy::window::PresentMode;
+use bevy_console::AddConsoleCommand;
+use crate::console::SpawnVehicleCommand;
 
 mod game;
 mod lib;
+mod console;
 
 fn main() {
 
@@ -37,8 +40,18 @@ fn main() {
         // .add_plugin(bevy::pbr::wireframe::WireframePlugin)
         // .add_startup_system(debugging_setup_system)
 
+        // Inspector
+        .add_plugin(bevy_inspector_egui::WorldInspectorPlugin::new())
+
+        // Console
+        .add_plugin(bevy_console::ConsolePlugin)
+        .insert_resource(bevy_console::ConsoleConfiguration {
+            ..Default::default()
+        })
+        .add_console_command::<SpawnVehicleCommand, _, _>(console::spawn_vehicle_command)
+
         // Startup Settings
-        .add_startup_system(scene_setup) 
+        .add_startup_system(scene_setup)
 
         // Run the app
         .run();
@@ -76,6 +89,7 @@ fn scene_setup(
     });
 }
 
+#[allow(dead_code)]
 fn debugging_setup_system(
     mut wireframe_config: ResMut<bevy::pbr::wireframe::WireframeConfig>, // Wireframe Mode Debugging
 ) {

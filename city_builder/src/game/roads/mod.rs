@@ -1,11 +1,9 @@
 use bevy::prelude::*;
 
-use self::road_creation::road_creation_system;
-
 mod road_network;
 mod road_creation;
 mod road_mesh;
-mod components;
+pub mod components;
 
 pub struct RoadsPlugin;
 impl Plugin for RoadsPlugin {
@@ -14,7 +12,7 @@ impl Plugin for RoadsPlugin {
 
         app.add_system_to_stage(
             CoreStage::PreUpdate,
-            road_creation_system
+            road_creation::road_creation_system
         );
     }
 }
