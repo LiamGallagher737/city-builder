@@ -299,6 +299,7 @@ fn generate_road(
             nodes: nodes.clone(),
             intersection_start: intersection_a,
             intersection_end: intersection_b,
+            speed: 40,
             mesh_entity: None,
         }
     );

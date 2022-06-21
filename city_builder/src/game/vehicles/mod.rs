@@ -1,5 +1,4 @@
 use bevy::prelude::{App, Assets, Color, Commands, Mesh, PbrBundle, Plugin, ResMut, shape, StandardMaterial, Transform};
-use crate::game::roads::components::RoadKey;
 use crate::game::vehicles::components::{Direction, Vehicle};
 
 mod components;
@@ -23,10 +22,9 @@ fn spawn_vehicles (
         material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..Default::default()
-    })
-    .insert(Vehicle {
-        road: RoadKey::default(),
-        t: 0.0,
-        direction: Direction::Forward,
     });
+    // .insert(Vehicle {
+    //     current_address: Default::default(),
+    //     direction: Direction::Forward,
+    // });
 }

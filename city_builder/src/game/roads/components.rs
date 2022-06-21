@@ -17,6 +17,7 @@ pub struct Road {
     pub nodes: Vec<Node>,
     pub intersection_start: IntersectionKey,
     pub intersection_end: IntersectionKey,
+    pub speed: u8,
     pub mesh_entity: Option<Entity>,
 }
 
