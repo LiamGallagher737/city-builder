@@ -7,11 +7,10 @@ pub enum BuildingData {
     Shop(Shop),
 }
 
-#[derive(Debug)]
+#[derive(Component, Debug)]
 pub struct Building {
     pub data: BuildingData,
     pub address: Address,
-    pub mesh_entity: Entity,
 }
 
 #[derive(Debug)]

@@ -48,14 +48,14 @@ pub fn road_creation_system(
             }
 
             if keys.pressed(bevy::prelude::KeyCode::Left) {
-                tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, 0.01, 0.0));
+                tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, 0.01 * 4.0, 0.0));
             }
 
             if keys.pressed(bevy::prelude::KeyCode::Right) {
-                tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, -0.01, 0.0));
+                tf.rotate(bevy::math::Quat::from_euler(bevy::math::EulerRot::XYZ, 0.0, -0.01 * 4.0, 0.0));
             }
 
-            tf.translation += velocity;
+            tf.translation += velocity * 4.0;
 
             if let Ok(mut cam_tf) = cam_query.get_single_mut() {
                 cam_tf.look_at(tf.translation, Vec3::Y);
