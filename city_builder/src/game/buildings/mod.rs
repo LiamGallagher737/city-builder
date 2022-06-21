@@ -1,8 +1,7 @@
 use bevy::core::FixedTimestep;
 use bevy::prelude::*;
 
-mod buildings;
-mod components;
+pub mod components;
 mod building_spawner;
 
 pub struct BuildingPlugin;

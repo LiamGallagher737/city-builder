@@ -1,15 +1,15 @@
 use bevy::prelude::*;
-use bevy_inspector_egui::Inspectable;
 use super::super::roads::components::RoadKey;
+use super::super::buildings::components::Address;
 
 #[derive(Component)]
 pub struct Vehicle {
-    pub road: RoadKey,
-    pub t: f32,
+    pub current_address: Address,
     pub direction: Direction,
+    pub destination: Address,
+    pub route: Vec<RoadKey>,
 }
 
-#[derive(Inspectable)]
 pub enum Direction {
     Forward,
     Backward,

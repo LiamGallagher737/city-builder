@@ -11,20 +11,20 @@ pub fn spawn_building(
 ) {
     let mut rng = thread_rng();
 
-    if let Some(address) = random_address(&mut rng, road_network) {
+    if let Some(address) = random_address(&mut rng, &road_network) {
         commands.spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
             material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            transform: Transform::from_translation(road_network.get_address_position(&address).unwrap()),
             ..Default::default()
         }).insert(Building {
-            data: BuildingData::Dwelling(Dwelling),
+            data: BuildingData::Dwelling(Dwelling{}),
             address,
         });
     }
 }
 
-fn random_address(rng: &mut ThreadRng, road_network: Res<RoadNetwork>) -> Option<Address> {
+fn random_address(rng: &mut ThreadRng, road_network: &Res<RoadNetwork>) -> Option<Address> {
     let road_keys: Vec<RoadKey> = road_network.roads.keys().collect();
 
     if road_keys.is_empty() {

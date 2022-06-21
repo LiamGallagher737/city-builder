@@ -4,6 +4,7 @@ mod road_network;
 mod road_creation;
 mod road_mesh;
 pub mod components;
+pub mod road_pathfinding;
 
 pub struct RoadsPlugin;
 impl Plugin for RoadsPlugin {
