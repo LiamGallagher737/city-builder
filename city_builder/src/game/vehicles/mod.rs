@@ -1,5 +1,4 @@
 use bevy::prelude::{App, Assets, Color, Commands, Mesh, PbrBundle, Plugin, ResMut, shape, StandardMaterial, Transform};
-use crate::game::vehicles::components::{Direction, Vehicle};
 
 mod components;
 mod vehicle_driving;
