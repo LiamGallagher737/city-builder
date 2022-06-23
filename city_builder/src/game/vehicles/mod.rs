@@ -1,4 +1,8 @@
+use std::default;
+
 use bevy::prelude::{App, Assets, Color, Commands, Mesh, PbrBundle, Plugin, ResMut, shape, StandardMaterial, Transform};
+
+use self::components::{Vehicle, Direction};
 
 mod components;
 mod vehicle_driving;
@@ -21,9 +25,10 @@ fn spawn_vehicles (
         material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
         transform: Transform::from_xyz(0.0, 0.5, 0.0),
         ..Default::default()
+    }).insert(Vehicle {
+        current_address: Default::default(),
+        direction: Direction::Forward,
+        destination: Default::default(),
+        route: vec![],
     });
-    // .insert(Vehicle {
-    //     current_address: Default::default(),
-    //     direction: Direction::Forward,
-    // });
 }

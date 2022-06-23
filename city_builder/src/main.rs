@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy_console::AddConsoleCommand;
-use crate::console::SpawnVehicleCommand;
+use crate::console::*;
 
 mod game;
 mod lib;

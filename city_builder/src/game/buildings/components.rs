@@ -15,7 +15,7 @@ pub struct Building {
     pub address: Address,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Default)]
 pub struct Address {
     pub road: RoadKey,
     pub t: f32,

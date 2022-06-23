@@ -12,6 +12,20 @@ new_key_type! {
     pub struct IntersectionKey;
 }
 
+impl IntersectionKey {
+    #[inline(always)]
+    pub fn common_road(self: &Self, other: &IntersectionKey, road_network: &RoadNetwork) -> Option<RoadKey> {
+        for (road, _) in &road_network.intersections[*self].roads {
+            for (other_road, _) in  &road_network.intersections[*other].roads {
+                if *road == *other_road {
+                    return Some(*road);
+                }
+            }
+        }
+        None
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Road {
     pub nodes: Vec<Node>,
@@ -53,6 +67,13 @@ impl Road {
         } else {
             return self.intersection_start;
         }
+    }
+    #[inline(always)]
+    pub fn connects_to_intersection(self: &Self, intersection: &IntersectionKey) -> bool {
+        if *intersection == self.intersection_start || *intersection == self.intersection_end {
+            return true;
+        }
+        false
     }
 }
 
