@@ -1,11 +1,13 @@
 use bevy::prelude::*;
 
 use crate::game::buildings::components::Address;
+use crate::game::roads::components::RoadKey;
+use crate::game::roads::road_pathfinding::RoutePoint::{Intersection, Road};
 
 use super::components::*;
 use super::super::roads::components::RoadNetwork;
 
-static mut counter: usize = 0;
+static mut counter: i64 = 0;
 
 pub fn vehicle_drive_system (
     road_network: Res<RoadNetwork>,
@@ -18,7 +20,7 @@ pub fn vehicle_drive_system (
 
             if counter > 1000 {
                 vehicle.current_address = Address {
-                    road: road_network.roads.keys().last().unwrap(),
+                    road: road_network.roads.keys().collect::<Vec<RoadKey>>()[0],
                     t: 0.0,
                 };
             }
@@ -29,6 +31,7 @@ pub fn vehicle_drive_system (
                     road: road_network.roads.keys().last().unwrap(),
                     t: 5.0,
                 }).unwrap();
+                counter = i64::MIN;
             }
 
         }
@@ -37,17 +40,30 @@ pub fn vehicle_drive_system (
             continue;
         }
 
+        // REWORK THIS!!!
+
         vehicle.current_address.t += 0.025;
 
         let road = &road_network.roads[vehicle.current_address.road];
 
         if vehicle.current_address.t.ceil() as usize + 1 > road.nodes.len() {
             vehicle.current_address.t = 0.0;
-            if let Some(intersection) = vehicle.route.pop() {
-                // vehicle.current_address.road = intersection.common_road(vehicle., road_network.as_ref());
-                tf.translation = road_network.intersections[intersection].position;
+            if let Some(point) = vehicle.route.pop() {
+                vehicle.point = Some(point);
             } else {
                 println!("Reached Destination");
+            }
+        }
+
+        if let Some(point) = &vehicle.point {
+            match point {
+                Intersection(_) => {
+                    std::thread::sleep_ms(500);
+                    vehicle.current_address.t = f32::MAX;
+                },
+                Road(road) => {
+                    tf.translation = road_network.roads[*road].calculate_point_at_distance(vehicle.current_address.t).unwrap().0;
+                },
             }
         }
 

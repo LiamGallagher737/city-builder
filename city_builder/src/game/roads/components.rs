@@ -61,11 +61,10 @@ impl Road {
         ))
     }
     #[inline(always)]
-    pub fn get_other_intersection(self: &Self, intersection: &IntersectionKey) -> IntersectionKey {
-        if *intersection == self.intersection_start {
-            return self.intersection_end;
-        } else {
-            return self.intersection_start;
+    pub fn get_other_intersection(self: &Self, cap: &RoadCap) -> IntersectionKey {
+        match cap {
+            RoadCap::Start => self.intersection_end,
+            RoadCap::End => self.intersection_start,
         }
     }
     #[inline(always)]

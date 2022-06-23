@@ -30,5 +30,6 @@ fn spawn_vehicles (
         direction: Direction::Forward,
         destination: Default::default(),
         route: vec![],
+        point: None,
     });
 }
