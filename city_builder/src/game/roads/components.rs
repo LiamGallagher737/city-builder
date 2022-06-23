@@ -46,6 +46,14 @@ impl Road {
             rotation,
         ))
     }
+    #[inline(always)]
+    pub fn get_other_intersection(self: &Self, intersection: &IntersectionKey) -> IntersectionKey {
+        if *intersection == self.intersection_start {
+            return self.intersection_end;
+        } else {
+            return self.intersection_start;
+        }
+    }
 }
 
 #[derive(Debug, Clone)]

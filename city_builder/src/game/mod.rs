@@ -1,8 +1,8 @@
 use bevy::prelude::*;
 
-mod roads;
-mod vehicles;
-mod buildings;
+pub mod roads;
+pub mod vehicles;
+pub mod buildings;
 
 pub struct GamePlugins;
 
