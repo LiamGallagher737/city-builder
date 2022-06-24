@@ -1,4 +1,6 @@
 use bevy::prelude::*;
+use rand::{Rng, thread_rng};
+use rand::prelude::ThreadRng;
 
 use crate::game::buildings::components::Address;
 use crate::game::roads::components::RoadKey;
@@ -7,33 +9,31 @@ use crate::game::roads::road_pathfinding::RoutePoint::{Intersection, Road};
 use super::components::*;
 use super::super::roads::components::RoadNetwork;
 
-static mut counter: i64 = 0;
-
 pub fn vehicle_drive_system (
     road_network: Res<RoadNetwork>,
+    keys: bevy::prelude::Res<bevy::input::Input<bevy::prelude::KeyCode>>,
     mut query: Query<(&mut Transform, &mut Vehicle)>
 ) {
     for (mut tf, mut vehicle) in query.iter_mut() {
 
-        unsafe {
-            counter += 1;
+        // if keys.just_pressed(bevy::prelude::KeyCode::G) {
+        //     vehicle.current_address = Address {
+        //         road: road_network.roads.keys().collect::<Vec<RoadKey>>()[0],
+        //         t: 0.0,
+        //     };
+        // }
 
-            if counter > 1000 {
-                vehicle.current_address = Address {
-                    road: road_network.roads.keys().collect::<Vec<RoadKey>>()[0],
-                    t: 0.0,
-                };
-            }
+        if keys.just_pressed(bevy::prelude::KeyCode::H) {
+            println!("attempting pathfinding");
 
-            if counter > 5000 {
-                println!("attempting pathfinding");
-                vehicle.route = road_network.calculate_path(&vehicle.current_address, &Address {
-                    road: road_network.roads.keys().last().unwrap(),
-                    t: 5.0,
-                }).unwrap();
-                counter = i64::MIN;
-            }
+            let mut rng = thread_rng();
 
+            vehicle.route = road_network.calculate_path(&random_address(&mut rng, &road_network).unwrap(), &random_address(&mut rng, &road_network).unwrap()).unwrap();
+            
+            // vehicle.route = road_network.calculate_path(&vehicle.current_address, &Address {
+            //     road: road_network.roads.keys().last().unwrap(),
+            //     t: 5.0,
+            // }).unwrap();
         }
 
         if vehicle.route.is_empty() {
@@ -107,4 +107,20 @@ pub fn vehicle_drive_system (
         // }
 
     }
+}
+
+fn random_address(rng: &mut ThreadRng, road_network: &Res<RoadNetwork>) -> Option<Address> {
+    let road_keys: Vec<RoadKey> = road_network.roads.keys().collect();
+
+    if road_keys.is_empty() {
+        return None;
+    }
+
+    let road = road_keys[rng.gen_range(0..road_keys.len())];
+    let t = rng.gen_range(0.0..road_network.roads[road].nodes.len() as f32);
+
+    Some(Address {
+        road,
+        t,
+    })
 }

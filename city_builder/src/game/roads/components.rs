@@ -1,4 +1,4 @@
-use bevy::{utils::hashbrown::HashSet, prelude::{Vec3, Quat, Component, Entity}};
+use bevy::{utils::hashbrown::{HashSet, HashMap}, prelude::{Vec3, Quat, Component, Entity}};
 use slotmap::{new_key_type, SlotMap};
 
 #[derive(Debug)]
@@ -93,7 +93,7 @@ impl Node {
 #[derive(Debug, Clone)]
 pub struct Intersection {
     pub position: Vec3,
-    pub roads: HashSet<(RoadKey, RoadCap)>,
+    pub roads: HashMap<RoadKey, RoadCap>,
     pub mesh_entity: Option<Entity>,
 }
 
@@ -101,7 +101,7 @@ impl Intersection {
     pub fn new(position: Vec3) -> Self {
         Self {
             position,
-            roads: HashSet::new(),
+            roads: HashMap::new(),
             mesh_entity: None,
         }
     }

@@ -91,7 +91,8 @@ impl Intersection {
 
         // Loop over connections and create pairs of vertices of the closest end of the road to the intersection
         for connection in &self.roads {
-            let road_nodes = &roads[connection.0].nodes;
+            // CRASH: idk why
+            let road_nodes = &roads[*connection.0].nodes;
 
             if road_nodes.len() < 2 {
                 continue;

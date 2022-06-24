@@ -55,6 +55,7 @@ fn main() {
 
         // Run the app
         .run();
+
 }
 
 fn scene_setup(
