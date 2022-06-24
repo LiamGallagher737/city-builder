@@ -23,3 +23,6 @@ jobs:
     - name: Tests
       working-directory: ./city_builder
       run: cargo test --verbose
+    - name: Clippy
+      working-directory: ./city_builder
+      run: cargo clippy
