@@ -1,7 +1,10 @@
-use bevy::{prelude::{Mesh, Vec3}, render::mesh::{Indices, VertexAttributeValues, PrimitiveTopology::TriangleList}};
-use bevy::prelude::{Assets, Color, Commands, PbrBundle, ResMut, StandardMaterial};
-use slotmap::SlotMap;
 use crate::game::roads::components::{Intersection, Road, RoadCap, RoadKey};
+use bevy::prelude::{Assets, Color, Commands, PbrBundle, ResMut, StandardMaterial};
+use bevy::{
+    prelude::{Mesh, Vec3},
+    render::mesh::{Indices, PrimitiveTopology::TriangleList, VertexAttributeValues},
+};
+use slotmap::SlotMap;
 
 const ROAD_WIDTH: f32 = 3.5;
 
@@ -23,7 +26,6 @@ impl Road {
         let mut vert_index = 0;
 
         for i in 0..self.nodes.len() {
-
             let mut forward = Vec3::default();
 
             if i < self.nodes.len() - 1 {
@@ -38,8 +40,12 @@ impl Road {
             let left = Vec3::new(-forward.z, 0.0, forward.x);
 
             // Vertices
-            vertices.push(float_array_from_vec3(self.nodes[i].position + left * ROAD_WIDTH));
-            vertices.push(float_array_from_vec3(self.nodes[i].position - left * ROAD_WIDTH));
+            vertices.push(float_array_from_vec3(
+                self.nodes[i].position + left * ROAD_WIDTH,
+            ));
+            vertices.push(float_array_from_vec3(
+                self.nodes[i].position - left * ROAD_WIDTH,
+            ));
 
             // Uvs
             let completion = i as f32 / (self.nodes.len() - 1) as f32;
@@ -61,27 +67,37 @@ impl Road {
         }
 
         let mut mesh = Mesh::new(TriangleList);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            VertexAttributeValues::Float32x3(vertices),
+        );
         mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(uvs));
         mesh.set_indices(Some(Indices::U16(triangles)));
 
-        self.mesh_entity = Some(commands.spawn_bundle(PbrBundle {
-            mesh: meshes.add(mesh),
-            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-            ..Default::default()
-        }).id());
+        self.mesh_entity = Some(
+            commands
+                .spawn_bundle(PbrBundle {
+                    mesh: meshes.add(mesh),
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    ..Default::default()
+                })
+                .id(),
+        );
     }
 }
 
 impl Intersection {
     pub fn generate_intersection_mesh(
-        &mut self, roads: &SlotMap<RoadKey, Road>,
+        &mut self,
+        roads: &SlotMap<RoadKey, Road>,
         commands: &mut Commands,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
     ) {
-
         // Remove old intersection mesh if one exists
         if let Some(entity) = self.mesh_entity {
             commands.entity(entity).despawn();
@@ -100,7 +116,9 @@ impl Intersection {
 
             let forward = match connection.1 {
                 RoadCap::Start => road_nodes[1].position - road_nodes.first().unwrap().position,
-                RoadCap::End => road_nodes.last().unwrap().position - road_nodes[road_nodes.len() - 2].position,
+                RoadCap::End => {
+                    road_nodes.last().unwrap().position - road_nodes[road_nodes.len() - 2].position
+                }
             };
 
             let forward = forward.normalize();
@@ -159,18 +177,30 @@ impl Intersection {
 
         // Put together the mesh
         let mut mesh = Mesh::new(TriangleList);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(vec![[0.032, 0.0_f32]; vertices.len()]));
-        mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
-        mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_UV_0,
+            VertexAttributeValues::Float32x2(vec![[0.032, 0.0_f32]; vertices.len()]),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_NORMAL,
+            VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]),
+        );
+        mesh.insert_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            VertexAttributeValues::Float32x3(vertices),
+        );
         mesh.set_indices(Some(Indices::U16(triangles)));
 
         // Spawn an entity with the mesh and assign the intersection with the entities id
-        self.mesh_entity = Some(commands.spawn_bundle(PbrBundle {
-            mesh: meshes.add(mesh),
-            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-            ..Default::default()
-        }).id());
-
+        self.mesh_entity = Some(
+            commands
+                .spawn_bundle(PbrBundle {
+                    mesh: meshes.add(mesh),
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    ..Default::default()
+                })
+                .id(),
+        );
     }
 }
 

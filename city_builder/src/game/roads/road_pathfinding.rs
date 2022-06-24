@@ -1,23 +1,24 @@
-use std::cmp::Ordering;
 use bevy::utils::hashbrown::HashMap;
 use priority_queue::PriorityQueue;
+use std::cmp::Ordering;
 
-use super::components::{RoadNetwork,Road, IntersectionKey};
 use super::super::buildings::components::Address;
+use super::components::{IntersectionKey, Road, RoadNetwork};
 
 impl RoadNetwork {
-    pub fn calculate_path(&self, start: &Address, destination: &Address) -> Option<Vec<IntersectionKey>> {
-
-        // Using the A* algorithm   
+    pub fn calculate_path(
+        &self,
+        start: &Address,
+        destination: &Address,
+    ) -> Option<Vec<IntersectionKey>> {
+        // Using the A* algorithm
         // https://youtu.be/ySN5Wnu88nE
 
         let mut explored_points = HashMap::<IntersectionKey, AStarPoint>::new();
         let mut queue = PriorityQueue::<IntersectionKey, AStarPoint>::new();
 
         let destination_position = self.get_address_position(destination).unwrap();
-        let h_cost = |key|{
-            destination_position.distance_squared(self.intersections[key].position)
-        };
+        let h_cost = |key| destination_position.distance_squared(self.intersections[key].position);
 
         let start_road = &self.roads[start.road];
 
@@ -35,7 +36,7 @@ impl RoadNetwork {
             AStarPoint {
                 previous_intersection: None,
                 g: start_road.get_length() - start.t,
-                    h: h_cost(start_road.intersection_end),
+                h: h_cost(start_road.intersection_end),
             },
         );
 
@@ -50,15 +51,17 @@ impl RoadNetwork {
             }
 
             for (road_key, road_cap) in &intersection.connections {
-
                 print!("{esc}c", esc = 27 as char);
-                println!("\n\n\n Queue: {:#?} \n\n Explored: {:#?} \n\n\n", queue, explored_points);
+                println!(
+                    "\n\n\n Queue: {:#?} \n\n Explored: {:#?} \n\n\n",
+                    queue, explored_points
+                );
 
                 if self.roads.get(*road_key).is_none() {
                     // Invalid keys are appearing, onced fixed this wont be needed
                     continue;
                 }
-                
+
                 let road = &self.roads[*road_key];
                 let other_intersection = road.get_other_intersection(road_cap);
 
@@ -81,10 +84,7 @@ impl RoadNetwork {
                     }
                 }
 
-                queue.push(
-                    other_intersection,
-                    new_point,
-                );
+                queue.push(other_intersection, new_point);
             }
         }
 
@@ -92,7 +92,8 @@ impl RoadNetwork {
             let mut route = vec![key];
 
             let mut next_intersection = key;
-            while let Some(intersection) = explored_points[&next_intersection].previous_intersection {
+            while let Some(intersection) = explored_points[&next_intersection].previous_intersection
+            {
                 route.push(intersection);
                 next_intersection = intersection;
             }

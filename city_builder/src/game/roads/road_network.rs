@@ -13,7 +13,6 @@ pub fn road_network_startup_system(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-
     let road_network = RoadNetwork {
         roads: SlotMap::with_key(),
         intersections: SlotMap::with_key(),
@@ -22,11 +21,12 @@ pub fn road_network_startup_system(
     commands.insert_resource(road_network);
 
     // Cube
-    commands.spawn_bundle(PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-        material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
-        transform: Transform::from_xyz(0.0, 0.5, 0.0),
-        ..Default::default()
-    })
-    .insert(RoadCreator::default());
+    commands
+        .spawn_bundle(PbrBundle {
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
+            material: materials.add(Color::rgb(0.8, 0.7, 0.6).into()),
+            transform: Transform::from_xyz(0.0, 0.5, 0.0),
+            ..Default::default()
+        })
+        .insert(RoadCreator::default());
 }

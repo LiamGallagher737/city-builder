@@ -1,5 +1,5 @@
-use bevy::prelude::*;
 use crate::game::roads::components::RoadNetwork;
+use bevy::prelude::*;
 
 use super::super::roads::components::RoadKey;
 
@@ -28,17 +28,13 @@ impl RoadNetwork {
                 return Some(position);
             }
         }
-        
+
         None
     }
 }
 
 #[derive(Debug)]
-pub struct Dwelling {
-
-}
+pub struct Dwelling {}
 
 #[derive(Debug)]
-pub struct Shop {
-
-}
+pub struct Shop {}

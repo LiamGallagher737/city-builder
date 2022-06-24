@@ -1,4 +1,7 @@
-use bevy::{utils::hashbrown::HashMap, prelude::{Vec3, Quat, Component, Entity}};
+use bevy::{
+    prelude::{Component, Entity, Quat, Vec3},
+    utils::hashbrown::HashMap,
+};
 use slotmap::{new_key_type, SlotMap};
 
 #[derive(Debug)]
@@ -41,10 +44,7 @@ impl Road {
         let up = forward.cross(right);
         let rotation = Quat::from_mat3(&bevy::math::Mat3::from_cols(right, up, forward));
 
-        Some((
-            position,
-            rotation,
-        ))
+        Some((position, rotation))
     }
     #[inline(always)]
     pub fn get_other_intersection(&self, cap: &RoadCap) -> IntersectionKey {
@@ -70,9 +70,7 @@ pub struct Node {
 impl Node {
     #[inline(always)]
     pub fn new(position: Vec3) -> Self {
-        Self {
-            position,
-        }
+        Self { position }
     }
 }
 

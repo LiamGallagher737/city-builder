@@ -1,19 +1,17 @@
+use crate::console::*;
 use bevy::prelude::*;
 use bevy::window::PresentMode;
 use bevy_console::AddConsoleCommand;
-use crate::console::*;
 
+mod console;
 mod game;
 mod lib;
-mod console;
 
 fn main() {
-
     App::new()
 
         // Window Settings
         .insert_resource(WindowDescriptor {
-
             title: "city_builder.exe".to_string(),
             present_mode: PresentMode::Immediate,
 
@@ -21,9 +19,7 @@ fn main() {
 
             // width: 750.0,   // Uncomment when working with smaller screens
             // height: 500.0,
-
             ..Default::default()
-
         })
 
         // Bevy Plugins
@@ -52,10 +48,9 @@ fn main() {
 
         // Startup Settings
         .add_startup_system(scene_setup)
-
+        
         // Run the app
         .run();
-
 }
 
 fn scene_setup(
@@ -71,7 +66,7 @@ fn scene_setup(
 
     // Directional Light
     commands.spawn_bundle(DirectionalLightBundle {
-        directional_light: DirectionalLight { 
+        directional_light: DirectionalLight {
             shadows_enabled: true,
             ..default()
         },
