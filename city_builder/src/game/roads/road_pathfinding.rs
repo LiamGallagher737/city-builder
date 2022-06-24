@@ -1,120 +1,151 @@
+use std::cmp::Ordering;
 use bevy::utils::hashbrown::HashMap;
+use priority_queue::PriorityQueue;
 
-use super::components::{RoadNetwork, Road, IntersectionKey, RoadKey};
+use super::components::{RoadNetwork,Road, IntersectionKey};
 use super::super::buildings::components::Address;
 
 impl RoadNetwork {
-    pub fn calculate_path(self: &Self, start: &Address, destination: &Address) -> Option<Vec<RoutePoint>> {
+    pub fn calculate_path(&self, start: &Address, destination: &Address) -> Option<Vec<IntersectionKey>> {
 
-        // dijkstra's algorithm
-        // https://youtu.be/EFg3u_E6eHU
+        // Using the A* algorithm   
+        // https://youtu.be/ySN5Wnu88nE
 
-        // usually in dijkstra the lowest value is better but 
-        // in this implementaation im using higher values as better
+        let mut explored_points = HashMap::<IntersectionKey, AStarPoint>::new();
+        let mut queue = PriorityQueue::<IntersectionKey, AStarPoint>::new();
 
-        let mut explored_intersections = HashMap::<IntersectionKey, DijkstraVertexData>::new();
-        let mut unexplored_intersections = HashMap::<IntersectionKey, DijkstraVertexData>::new();
+        let destination_position = self.get_address_position(destination).unwrap();
+        let h_cost = |key|{
+            destination_position.distance_squared(self.intersections[key].position)
+        };
 
         let start_road = &self.roads[start.road];
-        unexplored_intersections.insert(start_road.intersection_start,  DijkstraVertexData::default());
-        unexplored_intersections.insert(start_road.intersection_end, DijkstraVertexData::default());
 
-        while let Some((key, vertex)) = pop_best_value(&unexplored_intersections) {
-            unexplored_intersections.remove(&key);
-            explored_intersections.insert(key, vertex.clone());
+        queue.push(
+            start_road.intersection_start,
+            AStarPoint {
+                previous_intersection: None,
+                g: start.t,
+                h: h_cost(start_road.intersection_start),
+            },
+        );
 
-            if self.roads[destination.road].connects_to_intersection(&key) {
-                // We found the route
-                let mut route = vec![];
+        queue.push(
+            start_road.intersection_end,
+            AStarPoint {
+                previous_intersection: None,
+                g: start_road.get_length() - start.t,
+                    h: h_cost(start_road.intersection_end),
+            },
+        );
 
-                let mut last_key = key;
-                loop {
-                    if let Some(last) = explored_intersections[&last_key].last {
-                        route.push(RoutePoint::Intersection(last.0));
-                        route.push(RoutePoint::Road(last.1));
-                        last_key = last.0;
+        let mut destination_intersection = None;
+        while let Some((key, data)) = queue.pop() {
+            explored_points.insert(key, data.clone());
+            let intersection = &self.intersections[key];
+
+            if self.roads[destination.road].has_intersection(&key) {
+                destination_intersection = Some(key);
+                break;
+            }
+
+            for (road_key, road_cap) in &intersection.connections {
+
+                print!("{esc}c", esc = 27 as char);
+                println!("\n\n\n Queue: {:#?} \n\n Explored: {:#?} \n\n\n", queue, explored_points);
+
+                if self.roads.get(*road_key).is_none() {
+                    // Invalid keys are appearing, onced fixed this wont be needed
+                    continue;
+                }
+                
+                let road = &self.roads[*road_key];
+                let other_intersection = road.get_other_intersection(road_cap);
+
+                if explored_points.contains_key(&other_intersection) {
+                    continue;
+                }
+
+                let new_point = AStarPoint {
+                    previous_intersection: Some(key),
+                    g: road.get_length(),
+                    h: h_cost(other_intersection),
+                };
+
+                // Replace the clone with something else
+                if let Some((k, data)) = queue.clone().get(&other_intersection) {
+                    if data.f_cost() > new_point.f_cost() {
+                        queue.remove(k);
                     } else {
-                        break;
+                        continue;
                     }
                 }
 
-                return Some(route);
+                queue.push(
+                    other_intersection,
+                    new_point,
+                );
+            }
+        }
+
+        if let Some(key) = destination_intersection {
+            let mut route = vec![key];
+
+            let mut next_intersection = key;
+            while let Some(intersection) = explored_points[&next_intersection].previous_intersection {
+                route.push(intersection);
+                next_intersection = intersection;
             }
 
-            for (road_key, cap) in &self.intersections[key].roads {
-                if let Some(road) = self.roads.get(*road_key) {
-                    let other_intersection = road.get_other_intersection(&cap);
-                    
-                    if explored_intersections.contains_key(&other_intersection) {
-                        continue;
-                    }
-    
-                    let value = vertex.value - road.calculate_dijkstra_value();
-    
-                    if let Some(v) = unexplored_intersections.get_mut(&other_intersection) {
-                        if v.value < value {
-                            v.value = value;
-                        }
-                        continue;
-                    }
-    
-                    unexplored_intersections.insert(other_intersection, DijkstraVertexData::new(Some((key, *road_key)), value));
-                } else {
-                    println!("{:#?}", *road_key);
-                }
-            }
+            println!("Route: {:#?}", route);
+
+            return Some(route);
         }
 
         None
     }
 }
 
-fn pop_best_value(unexplored_intersections: &HashMap::<IntersectionKey, DijkstraVertexData>) -> Option<(IntersectionKey, DijkstraVertexData)> {
-    if unexplored_intersections.is_empty() {
-        return None;
-    }
-
-    let mut best = (IntersectionKey::default(), DijkstraVertexData::default());
-    for entry in unexplored_intersections {
-        if entry.1.value >= best.1.value {
-            best = (*entry.0, entry.1.clone());
-        }
-    }
-
-    Some(best)
-}
-
-pub enum RoutePoint {
-    Intersection(IntersectionKey),
-    Road(RoadKey),
-}
-
 impl Road {
-    pub fn calculate_dijkstra_value(self: &Self) -> usize {
-        (self.speed as usize * 100) / self.nodes.len()
+    pub fn get_length(&self) -> f32 {
+        self.nodes.len() as f32 * 2.0
     }
 }
 
-#[derive(Clone, Debug)]
-struct DijkstraVertexData {
-    last: Option<(IntersectionKey, RoadKey)>,
-    value: usize,
+#[derive(Debug, Clone, PartialEq)]
+struct AStarPoint {
+    // The intersection we came from
+    previous_intersection: Option<IntersectionKey>,
+    // Cost of this path
+    g: f32,
+    // Square euclidean distance to end
+    h: f32,
 }
 
-impl Default for DijkstraVertexData {
-    fn default() -> Self {
-        Self {
-            last: None,
-            value: usize::MAX,
-        }
+impl Eq for AStarPoint {}
+
+impl AStarPoint {
+    fn f_cost(&self) -> f32 {
+        (self.g * self.g) + self.h
     }
 }
 
-impl DijkstraVertexData {
-    fn new(last: Option<(IntersectionKey, RoadKey)>, value: usize) -> Self {
-        Self {
-            last,
-            value,
+impl PartialOrd for AStarPoint {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for AStarPoint {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // PriorityQueue sorts by largest so here I return the opposite
+        // to make sure we get the lowest f cost and not the highest
+        if self.f_cost() > other.f_cost() {
+            Ordering::Less
+        } else if self.f_cost() < other.f_cost() {
+            Ordering::Greater
+        } else {
+            Ordering::Equal
         }
     }
 }

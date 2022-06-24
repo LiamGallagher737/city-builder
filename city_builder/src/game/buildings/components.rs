@@ -5,8 +5,8 @@ use super::super::roads::components::RoadKey;
 
 #[derive(Debug)]
 pub enum BuildingData {
-    Dwelling(Dwelling),
-    Shop(Shop),
+    // Dwelling(Dwelling),
+    // Shop(Shop),
 }
 
 #[derive(Component, Debug)]
@@ -22,7 +22,7 @@ pub struct Address {
 }
 
 impl RoadNetwork {
-    pub fn get_address_position(self: &Self, address: &Address) -> Option<Vec3> {
+    pub fn get_address_position(&self, address: &Address) -> Option<Vec3> {
         if let Some(road) = self.roads.get(address.road) {
             if let Some((position, _)) = road.calculate_point_at_distance(address.t) {
                 return Some(position);

@@ -1,4 +1,4 @@
-use bevy::{utils::hashbrown::{HashSet, HashMap}, prelude::{Vec3, Quat, Component, Entity}};
+use bevy::{utils::hashbrown::HashMap, prelude::{Vec3, Quat, Component, Entity}};
 use slotmap::{new_key_type, SlotMap};
 
 #[derive(Debug)]
@@ -12,20 +12,6 @@ new_key_type! {
     pub struct IntersectionKey;
 }
 
-impl IntersectionKey {
-    #[inline(always)]
-    pub fn common_road(self: &Self, other: &IntersectionKey, road_network: &RoadNetwork) -> Option<RoadKey> {
-        for (road, _) in &road_network.intersections[*self].roads {
-            for (other_road, _) in  &road_network.intersections[*other].roads {
-                if *road == *other_road {
-                    return Some(*road);
-                }
-            }
-        }
-        None
-    }
-}
-
 #[derive(Debug, Clone)]
 pub struct Road {
     pub nodes: Vec<Node>,
@@ -36,7 +22,7 @@ pub struct Road {
 }
 
 impl Road {
-    pub fn calculate_point_at_distance(self: &Self, distance: f32) -> Option<(Vec3, Quat)> {
+    pub fn calculate_point_at_distance(&self, distance: f32) -> Option<(Vec3, Quat)> {
         let node_index = distance.floor() as usize;
 
         if self.nodes.len() <= node_index + 1 {
@@ -61,14 +47,14 @@ impl Road {
         ))
     }
     #[inline(always)]
-    pub fn get_other_intersection(self: &Self, cap: &RoadCap) -> IntersectionKey {
+    pub fn get_other_intersection(&self, cap: &RoadCap) -> IntersectionKey {
         match cap {
             RoadCap::Start => self.intersection_end,
             RoadCap::End => self.intersection_start,
         }
     }
     #[inline(always)]
-    pub fn connects_to_intersection(self: &Self, intersection: &IntersectionKey) -> bool {
+    pub fn has_intersection(&self, intersection: &IntersectionKey) -> bool {
         if *intersection == self.intersection_start || *intersection == self.intersection_end {
             return true;
         }
@@ -93,7 +79,7 @@ impl Node {
 #[derive(Debug, Clone)]
 pub struct Intersection {
     pub position: Vec3,
-    pub roads: HashMap<RoadKey, RoadCap>,
+    pub connections: HashMap<RoadKey, RoadCap>,
     pub mesh_entity: Option<Entity>,
 }
 
@@ -101,7 +87,7 @@ impl Intersection {
     pub fn new(position: Vec3) -> Self {
         Self {
             position,
-            roads: HashMap::new(),
+            connections: HashMap::new(),
             mesh_entity: None,
         }
     }
@@ -113,7 +99,7 @@ pub enum RoadCap {
     End,
 }
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct RoadCreator {
     pub active: bool,
     pub just_activated: bool,
@@ -123,32 +109,19 @@ pub struct RoadCreator {
     pub can_create_intersection: bool,
 }
 
-impl Default for RoadCreator {
-    fn default() -> Self {
-        Self {
-            active: false,
-            just_activated: false,
-            just_deactivated: false,
-            current_road_nodes: Vec::new(),
-            start_intersection: IntersectionKey::default(),
-            can_create_intersection: false,
-        }
-    }
-}
-
 impl RoadCreator {
-    pub fn toggle_active(self: &mut Self) {
+    pub fn toggle_active(&mut self) {
         if self.active {
             self.deactivate();
         } else {
             self.activate();
         }
     }
-    pub fn activate(self: &mut Self) {
+    pub fn activate(&mut self) {
         self.active = true;
         self.just_activated = true;
     }
-    pub fn deactivate(self: &mut Self) {
+    pub fn deactivate(&mut self) {
         self.active = false;
         self.just_deactivated = true;
     }

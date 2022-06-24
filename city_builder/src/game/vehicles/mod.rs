@@ -1,7 +1,4 @@
-use std::default;
-
 use bevy::prelude::{App, Assets, Color, Commands, Mesh, PbrBundle, Plugin, ResMut, shape, StandardMaterial, Transform};
-
 use self::components::{Vehicle, Direction};
 
 mod components;
@@ -30,6 +27,5 @@ fn spawn_vehicles (
         direction: Direction::Forward,
         destination: Default::default(),
         route: vec![],
-        point: None,
     });
 }

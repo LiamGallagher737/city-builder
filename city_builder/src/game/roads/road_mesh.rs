@@ -7,7 +7,7 @@ const ROAD_WIDTH: f32 = 3.5;
 
 impl Road {
     pub fn generate_road_mesh(
-        self: &mut Self,
+        &mut self,
         commands: &mut Commands,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
@@ -48,7 +48,7 @@ impl Road {
 
             // Triangles
             if i < self.nodes.len() - 1 {
-                triangles.push(vert_index + 0);
+                triangles.push(vert_index);
                 triangles.push(vert_index + 2);
                 triangles.push(vert_index + 1);
 
@@ -76,7 +76,7 @@ impl Road {
 
 impl Intersection {
     pub fn generate_intersection_mesh(
-        self: &mut Self, roads: &SlotMap<RoadKey, Road>,
+        &mut self, roads: &SlotMap<RoadKey, Road>,
         commands: &mut Commands,
         meshes: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
@@ -90,7 +90,7 @@ impl Intersection {
         let mut vertex_pairs = vec![];
 
         // Loop over connections and create pairs of vertices of the closest end of the road to the intersection
-        for connection in &self.roads {
+        for connection in &self.connections {
             // CRASH: idk why
             let road_nodes = &roads[*connection.0].nodes;
 
@@ -127,15 +127,15 @@ impl Intersection {
         // Create a list of vertices from the pairs and sort it so they go in a clockwise rotation
         let mut next_index = 0;
         let mut vertices: Vec<[f32; 3]> = Vec::new();
-        while vertex_pairs.len() > 0 {
+        while !vertex_pairs.is_empty() {
             let pair = vertex_pairs.remove(next_index);
             vertices.push(float_array_from_vec3(pair.0));
             vertices.push(float_array_from_vec3(pair.1));
 
             let mut closest_index = None;
             let mut closest_distance = f32::INFINITY;
-            for i in 0..vertex_pairs.len() {
-                let distance_sq = pair.1.distance_squared(vertex_pairs[i].0);
+            for (i, vertex_pair) in vertex_pairs.iter().enumerate() {
+                let distance_sq = pair.1.distance_squared(vertex_pair.0);
                 if distance_sq < closest_distance {
                     closest_index = Some(i);
                     closest_distance = distance_sq;
@@ -159,7 +159,7 @@ impl Intersection {
 
         // Put together the mesh
         let mut mesh = Mesh::new(TriangleList);
-        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(vec![[0.0_32, 0.0_f32]; vertices.len()]));
+        mesh.insert_attribute(Mesh::ATTRIBUTE_UV_0, VertexAttributeValues::Float32x2(vec![[0.032, 0.0_f32]; vertices.len()]));
         mesh.insert_attribute(Mesh::ATTRIBUTE_NORMAL, VertexAttributeValues::Float32x3(vec![[0.0, 1.0, 0.0]; vertices.len()]));
         mesh.insert_attribute(Mesh::ATTRIBUTE_POSITION, VertexAttributeValues::Float32x3(vertices));
         mesh.set_indices(Some(Indices::U16(triangles)));

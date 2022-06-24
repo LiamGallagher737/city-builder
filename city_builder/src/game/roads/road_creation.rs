@@ -95,8 +95,8 @@ pub fn road_creation_system(
             );
 
             // Give intersections reference to new road
-            road_network.intersections[intersection_key].roads.insert(new_road_key, RoadCap::End);
-            road_network.intersections[road_creator.start_intersection].roads.insert(new_road_key, RoadCap::Start);
+            road_network.intersections[intersection_key].connections.insert(new_road_key, RoadCap::End);
+            road_network.intersections[road_creator.start_intersection].connections.insert(new_road_key, RoadCap::Start);
 
             let roads = road_network.roads.clone();
             road_network.intersections[intersection_key].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
@@ -149,8 +149,8 @@ pub fn road_creation_system(
                 &mut commands, &mut meshes, &mut materials, &mut road_network
             );
 
-            road_network.intersections[road_creator.start_intersection].roads.insert(road_key, RoadCap::Start);
-            road_network.intersections[intersection_key].roads.insert(road_key, RoadCap::End);
+            road_network.intersections[road_creator.start_intersection].connections.insert(road_key, RoadCap::Start);
+            road_network.intersections[intersection_key].connections.insert(road_key, RoadCap::End);
 
             let roads = road_network.roads.clone();
             road_network.intersections[road_creator.start_intersection].generate_intersection_mesh(&roads, &mut commands, &mut meshes, &mut materials);
@@ -198,10 +198,10 @@ pub fn road_creation_system(
             );
 
             // Give intersections references to new roads
-            road_network.intersections[intersection_key].roads.insert(road_a_key, RoadCap::End);
-            road_network.intersections[intersection_key].roads.insert(road_b_key, RoadCap::Start);
-            road_network.intersections[intersection_key].roads.insert(current_road_key, RoadCap::End);
-            road_network.intersections[road_creator.start_intersection].roads.insert(current_road_key, RoadCap::Start);
+            road_network.intersections[intersection_key].connections.insert(road_a_key, RoadCap::End);
+            road_network.intersections[intersection_key].connections.insert(road_b_key, RoadCap::Start);
+            road_network.intersections[intersection_key].connections.insert(current_road_key, RoadCap::End);
+            road_network.intersections[road_creator.start_intersection].connections.insert(current_road_key, RoadCap::Start);
 
             // Generate intersection mesh
             let roads = road_network.roads.clone();
@@ -290,13 +290,13 @@ fn generate_road(
         road_network.intersections[intersection_a].position,
         &clear_nearby_nodes(
             road_network.intersections[intersection_b].position,
-            &nodes,
+            nodes,
         ),
     );
 
     let road_key = road_network.roads.insert(
         Road {
-            nodes: nodes.clone(),
+            nodes,
             intersection_start: intersection_a,
             intersection_end: intersection_b,
             speed: 40,
