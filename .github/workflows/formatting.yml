@@ -41,7 +41,7 @@ jobs:
         git commit -m "Formatted Code" -a
         
     - name: Push changes
-      if: ${{ CHANGES == true }}
+      if: ${{ env.NO_CHANGES == false }}
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
