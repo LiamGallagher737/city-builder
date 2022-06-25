@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: full
+  NO_CHANGES: ${{ true }}
   
 jobs:
   build:
@@ -21,31 +22,26 @@ jobs:
         fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
     - uses: actions/checkout@v3
     
-    - uses: actions/github-script@v6
     - name: Check for formatting changes
-      with:
-        script: |
-          cd city_builder
-          cargo fmt --check
-          
-          if [ $? eq 0 ]
-          then
-            return 0
-          fi
+      run: | 
+        cargo ft --check
+        $NO_CHANGES = $?
           
     
     - name: Create local changes
-      continue-on-error: true
+      if: ${{ NO_CHANGES == false }}
       working-directory: ./city_builder
       run: cargo fmt
       
     - name: Commit files
+      if: ${{ NO_CHANGES == false }}
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git commit -m "Formatted Code" -a
         
     - name: Push changes
+      if: ${{ CHANGES == true }}
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
