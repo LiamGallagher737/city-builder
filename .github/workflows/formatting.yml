@@ -29,12 +29,12 @@ jobs:
           
     
     - name: Create local changes
-      if: ${{ NO_CHANGES == false }}
+      if: ${{ env.NO_CHANGES == false }}
       working-directory: ./city_builder
       run: cargo fmt
       
     - name: Commit files
-      if: ${{ NO_CHANGES == false }}
+      if: ${{ env.NO_CHANGES == false }}
       run: |
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
