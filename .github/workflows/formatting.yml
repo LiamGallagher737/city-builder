@@ -21,11 +21,17 @@ jobs:
         fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
     - uses: actions/checkout@v3
     
-#     - uses: actions/github-script@v6
-#     - name: Check for formatting changes
-#       with:
-#         script: |
-#           cd city_builder
+    - uses: actions/github-script@v6
+    - name: Check for formatting changes
+      with:
+        script: |
+          cd city_builder
+          cargo fmt --check
+          
+          if [ $? eq 0 ]
+          then
+            return 0
+          fi
           
     
     - name: Create local changes
