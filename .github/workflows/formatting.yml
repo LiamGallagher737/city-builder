@@ -24,7 +24,7 @@ jobs:
     
     - name: Check for formatting changes
       run: | 
-        cargo ft --check
+        cargo fmt --check
         $NO_CHANGES = $?
           
     
