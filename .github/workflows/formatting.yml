@@ -22,11 +22,10 @@ jobs:
         fetch-depth: 0 # otherwise, there would be errors pushing refs to the destination repository.
     - uses: actions/checkout@v3
     
-    - name: Check for formatting changes
+    - name: Check formatting
       working-directory: ./city_builder
       run: | 
-        cargo fmt --check
-        $NO_CHANGES = $?
+        $NO_CHANGES = cargo fmt --check
           
     
     - name: Create local changes
