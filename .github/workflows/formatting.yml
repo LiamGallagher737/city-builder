@@ -25,8 +25,8 @@ jobs:
     - name: Check formatting
       working-directory: ./city_builder
       run: | 
-        $NO_CHANGES = cargo fmt --check
-        echo env
+        cargo fmt --check
+        $NO_CHANGES = $?
           
     
     - name: Create local changes
