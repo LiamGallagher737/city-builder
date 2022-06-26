@@ -26,6 +26,7 @@ jobs:
       working-directory: ./city_builder
       run: | 
         $NO_CHANGES = cargo fmt --check
+        echo env
           
     
     - name: Create local changes
