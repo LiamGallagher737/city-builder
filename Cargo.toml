@@ -19,7 +19,5 @@ priority-queue = "1.2.2"
 # Utilities
 rand = "0.8.5"
 
-[dev.dependencies]
-
-# Utilities
-bevy_gizmos = { git = "https://github.com/LiamGallagher737/bevy_gizmos" }
+# Development
+bevy_gizmos = { path = "D:/bevy_gizmos" }
